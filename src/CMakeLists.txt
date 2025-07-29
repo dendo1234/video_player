@@ -1,5 +1,6 @@
 set(PROJECT_SOURCES
     basic/Player.cpp
+    video/Decoders.cpp
     video/Video.cpp
     main.cpp
 )

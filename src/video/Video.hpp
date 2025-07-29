@@ -2,6 +2,7 @@
 #include <memory>
 #include <queue>
 #include <concepts>
+#include <video/Deque.hpp>
 
 extern "C" {
 #include "libavcodec/avcodec.h"
@@ -47,29 +48,6 @@ struct SDL_TextureDeleter {
     }
 };
 
-template <typename T>
-concept HasPts = requires(T t) {
-    t.pts;
-};
-
-template<HasPts T>
-class Deque {
-private:
-    std::deque<T*> deque;
-    SDL_Mutex* mutex;
-    SDL_Condition* readCond;
-    SDL_Condition* writeCond;
-    bool flushed{false};
-public:
-    Deque();
-    ~Deque();
-
-    void Push(T* data);
-    void PushFront(T* data);
-    T* Get();
-    size_t Size();
-    T* GetBeforePts(int64_t pts);
-};
 
 struct AudioData {
     std::unique_ptr<AVCodecContext, AVCodecContextDeleter> codecContext;
@@ -90,8 +68,6 @@ struct VideoData {
     AVRational time_base;
     std::unique_ptr<SDL_Texture, SDL_TextureDeleter> texture;
 };
-
-void audio_callback(void *userdata, Uint8 *stream, int len);
 
 class Video {
 private:
