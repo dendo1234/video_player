@@ -1,0 +1,7 @@
+.vscode/
+build/
+bin/
+
+# avoid storing testing video files
+*.mp4
+*.mkv
