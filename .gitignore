@@ -1,7 +1,10 @@
+.vs/
 .vscode/
-build/
 bin/
+build/
 
 # avoid storing testing video files
 *.mp4
 *.mkv
+
+CMakeUserPresets.json

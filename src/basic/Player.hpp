@@ -1,6 +1,7 @@
 #include <SDL3/SDL.h>
 #include <video/Video.hpp>
 #include <memory>
+#include <string_view>
 
 class Player {
 private:

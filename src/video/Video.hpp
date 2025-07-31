@@ -2,6 +2,7 @@
 #include <memory>
 #include <queue>
 #include <concepts>
+#include <string>
 #include <video/Deque.hpp>
 
 extern "C" {
