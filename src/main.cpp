@@ -13,6 +13,10 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     Player* player = static_cast<Player*>(appstate);
 
     uint64_t dt = player->DeltaTime();
+    // SDL_Log("%llu", dt);
+    if (dt == 0) {
+        return SDL_APP_CONTINUE;
+    }
 
     player->video->Update(dt);
 
