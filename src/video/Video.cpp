@@ -238,7 +238,7 @@ Video::Video(const char* filename, SDL_Renderer* renderer)
     InitializeThreads();
 
     // seta o framerate do jogo para ser o framerate do vídeo
-    int framerate = static_cast<int>((double)m_videoData.m_videoCodecContext->framerate.den * 1000 / m_videoData.m_videoCodecContext->framerate.num);
+    [[maybe_unused]] int framerate = static_cast<int>((double)m_videoData.m_videoCodecContext->framerate.den * 1000 / m_videoData.m_videoCodecContext->framerate.num);
 }
 
 Video::~Video() {
@@ -283,9 +283,8 @@ void Video::Update(float dt) {
 
     m_timestamp += dt;
     SDL_SignalCondition(m_videoData.cond);
-    int lastError;
 
-    
+
     AVFrame* frame = m_videoData.frameQueue.GetBeforePts(static_cast<int64_t>((double)m_currentAudioPts * av_q2d(m_audioData.time_base) / av_q2d(m_videoData.time_base)));
     if (frame != nullptr) {
         SDL_UpdateYUVTexture(
