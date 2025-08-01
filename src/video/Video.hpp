@@ -56,6 +56,7 @@ struct AudioData {
     Deque<AVPacket> packetQueue;
     Deque<AVFrame> frameQueue;
     AVRational time_base;
+    double clock;
     SDL_AudioSpec audioSpec;
 };
 
@@ -67,6 +68,7 @@ struct VideoData {
     SDL_Mutex* mutex;
     SDL_Condition* cond;
     AVRational time_base;
+    double clock;
     std::unique_ptr<SDL_Texture, SDL_TextureDeleter> texture;
 };
 
@@ -83,6 +85,7 @@ private:
     SDL_Thread* m_videoDecoder;
     SDL_Thread* m_audioDecoder;
 
+    double clock{0};
 
 public:
 
@@ -93,17 +96,18 @@ public:
     AudioData m_audioData;
     VideoData m_videoData;
 
-    bool m_videoDone;
-    double m_timestamp;
-    long long int m_currentAudioPts;
+
+    bool m_videoDone{false};
     long long int m_startTick{-0};
 
 
     Video(const char* filename, SDL_Renderer* renderer);
     ~Video();
 
+    double GetSyncClock();
+
     void Render() const;
-    void Update(float dt);
+    void Update(uint64_t dt);
     void Start();
 
     bool Is(const std::string& type) const;
@@ -114,16 +118,4 @@ public:
 bool inline Video::Is(const std::string& type) const {
     return type == "Video";
 }
-
-
-
-/* 
-#include <SDL.h>
-
-
-void RenderVideo(SDL_Renderer* renderer, const char* filename);
-
-
- */
-
 

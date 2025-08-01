@@ -10,7 +10,7 @@ extern "C" {
 }
 
 
-void AudioCallback(void *userdata, SDL_AudioStream *stream, int additional_amount, int total_amount) {
+void AudioCallback(void *userdata, SDL_AudioStream *stream, int additional_amount, [[maybe_unused]] int total_amount) {
     if (additional_amount <= 0) {
         return;
     }
@@ -19,18 +19,18 @@ void AudioCallback(void *userdata, SDL_AudioStream *stream, int additional_amoun
     Video* video = (Video*)userdata;
     AudioData* data = &video->m_audioData;
     if (video->m_videoDone) {
-        memset(stream, 0, total_amount);
+        // memset(stream, 0, total_amount);
         return;
     }
 
-    AVFrame* frame = data->frameQueue.Get();
+    AVFrame* frame = data->frameQueue.GetBeforePts(static_cast<int64_t>(video->GetSyncClock() / av_q2d(data->time_base)));
     if (frame == nullptr) {
-        memset(stream, 0, total_amount);
-        video->m_videoDone = true;
+        // memset(stream, 0, total_amount);
+        // video->m_videoDone = true;
         av_frame_free(&frame);
         return;
     }
-    video->m_currentAudioPts = frame->pts;
+    data->clock = frame->pts * av_q2d(data->time_base);
     SDL_PutAudioStreamData(stream, frame->data[0], frame->linesize[0]);
 
     av_frame_free(&frame);
@@ -90,9 +90,7 @@ int Video::GetFormatContext(const char* filename) {
 }
 
 Video::Video(const char* filename, SDL_Renderer* renderer) 
-    : renderer{renderer},
-      m_videoDone{false}, 
-      m_timestamp{0} {
+    : renderer{renderer} {
     int lastError;
     lastError = GetFormatContext(filename);
     if (lastError != 0) {
@@ -276,16 +274,20 @@ void Video::Start() {
     m_startTick = SDL_GetTicks();
 }
 
-void Video::Update(float dt) {
+double Video::GetSyncClock() {
+    return clock;
+}
+
+void Video::Update(uint64_t dt) {
     if (m_videoDone == true) {
         return;
     }
 
-    m_timestamp += dt;
+    clock += dt/1000.0;
     SDL_SignalCondition(m_videoData.cond);
 
 
-    AVFrame* frame = m_videoData.frameQueue.GetBeforePts(static_cast<int64_t>((double)m_currentAudioPts * av_q2d(m_audioData.time_base) / av_q2d(m_videoData.time_base)));
+    AVFrame* frame = m_videoData.frameQueue.GetBeforePts(static_cast<int64_t>(GetSyncClock() / av_q2d(m_videoData.time_base)));
     if (frame != nullptr) {
         SDL_UpdateYUVTexture(
                 m_videoData.texture.get(),
@@ -305,13 +307,6 @@ void Video::Update(float dt) {
 }
 
 void Video::Render() const {
-
-    // SDL_LockMutex(m_videoData.mutex);
-    // if (m_timestamp < m_videoData.pts) {
-    //     SDL_UnlockMutex(m_videoData.mutex);
-    //     return;
-    // }
-
     bool lastError = SDL_RenderTexture(renderer, m_videoData.texture.get(), nullptr, nullptr);
     if (lastError == false) {
         SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Error rendering video texture: %s", SDL_GetError());
