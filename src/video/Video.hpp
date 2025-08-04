@@ -74,7 +74,8 @@ struct VideoData {
 
 class Video {
 private:
-    SDL_AudioDeviceID m_audioDevideID;
+    SDL_AudioDeviceID m_audioDevideID{0};
+    SDL_AudioStream* m_audioStream;
 
     int GetFormatContext(const char* filename);
     void InitializeThreads();

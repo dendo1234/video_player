@@ -9,35 +9,6 @@ extern "C" {
 #include "libswresample/swresample.h"
 }
 
-
-void AudioCallback(void *userdata, SDL_AudioStream *stream, int additional_amount, [[maybe_unused]] int total_amount) {
-    if (additional_amount <= 0) {
-        return;
-    }
-
-
-    Video* video = (Video*)userdata;
-    AudioData* data = &video->m_audioData;
-    if (video->m_videoDone) {
-        // memset(stream, 0, total_amount);
-        return;
-    }
-
-    AVFrame* frame = data->frameQueue.GetBeforePts(static_cast<int64_t>(video->GetSyncClock() / av_q2d(data->time_base)));
-    if (frame == nullptr) {
-        // memset(stream, 0, total_amount);
-        // video->m_videoDone = true;
-        av_frame_free(&frame);
-        return;
-    }
-    data->clock = frame->pts * av_q2d(data->time_base);
-    SDL_PutAudioStreamData(stream, frame->data[0], frame->linesize[0]);
-
-    av_frame_free(&frame);
-    return;
-}
-
-
 int PacketReaderThread(void* userdata) {
     Video* video = (Video*)userdata;
     AVPacket* packet = av_packet_alloc();
@@ -192,9 +163,18 @@ Video::Video(const char* filename, SDL_Renderer* renderer)
     m_audioData.audioSpec.format = SDL_AUDIO_S16;
     m_audioData.audioSpec.channels = static_cast<uint8_t>(m_audioData.codecContext->ch_layout.nb_channels);
 
-    SDL_AudioStream* stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &m_audioData.audioSpec, AudioCallback, this);
+    // SDL_AudioStream* stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &m_audioData.audioSpec, AudioCallback, this);
+    m_audioDevideID = SDL_OpenAudioDevice(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &m_audioData.audioSpec); 
+    m_audioStream = SDL_CreateAudioStream(&m_audioData.audioSpec, &m_audioData.audioSpec);
+    if (m_audioStream == nullptr) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Unable to create audio stream: %s", SDL_GetError());
+    }
 
-    if (!SDL_ResumeAudioDevice(SDL_GetAudioStreamDevice(stream))) {
+    if (!SDL_BindAudioStream(m_audioDevideID, m_audioStream)) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Unable to bind audio stream: %s", SDL_GetError());
+    }
+
+    if (!SDL_ResumeAudioDevice(m_audioDevideID)) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Unable to resume audio device: %s", SDL_GetError());
     }
 
@@ -226,7 +206,7 @@ Video::Video(const char* filename, SDL_Renderer* renderer)
     }
     m_audioData.swrContext = unique_ptr<SwrContext, SwrContextDeleter>(swr);
 
-    SDL_PauseAudioDevice(m_audioDevideID);
+    
      
     // initialize VideoData
     m_videoData.texture = unique_ptr<SDL_Texture, SDL_TextureDeleter>(SDL_CreateTexture(renderer, SDL_PIXELFORMAT_YV12, SDL_TEXTUREACCESS_STREAMING, m_videoData.m_videoCodecContext->width, m_videoData.m_videoCodecContext->height));
@@ -287,7 +267,23 @@ void Video::Update(uint64_t dt) {
     SDL_SignalCondition(m_videoData.cond);
 
 
-    AVFrame* frame = m_videoData.frameQueue.GetBeforePts(static_cast<int64_t>(GetSyncClock() / av_q2d(m_videoData.time_base)));
+    SDL_Log("%u", SDL_GetAudioStreamQueued(m_audioStream));
+    AVFrame* frame = m_audioData.frameQueue.GetBeforePts(static_cast<int64_t>(GetSyncClock() / av_q2d(m_audioData.time_base)));
+    if (frame == nullptr) {
+        // memset(stream, 0, total_amount);
+        // video->m_videoDone = true;
+    } else {
+        m_audioData.clock = frame->pts * av_q2d(m_audioData.time_base);
+        if (!SDL_PutAudioStreamData(m_audioStream, frame->data[0], frame->linesize[0])) {
+            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Unable to put audio stream data: %s", SDL_GetError());
+        }
+    }
+    SDL_Log("%u", SDL_GetAudioStreamQueued(m_audioStream));
+    
+
+    av_frame_free(&frame);
+
+    frame = m_videoData.frameQueue.GetBeforePts(static_cast<int64_t>(GetSyncClock() / av_q2d(m_videoData.time_base)));
     if (frame != nullptr) {
         SDL_UpdateYUVTexture(
                 m_videoData.texture.get(),
