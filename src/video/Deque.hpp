@@ -23,6 +23,9 @@ public:
     void Push(T* data);
     void PushFront(T* data);
     T* Get();
+    // Does not delete the element
+    T* Peak();
+    void Pop();
     size_t Size();
     T* GetBeforePts(int64_t pts);
 };
@@ -83,6 +86,32 @@ T* Deque<T>::Get() {
     SDL_UnlockMutex(mutex);
     
     return ptr;
+}
+
+template<HasPts T>
+T* Deque<T>::Peak() {
+    SDL_LockMutex(mutex);
+    while (deque.size() == 0) {
+        SDL_WaitCondition(readCond,mutex);
+    }
+    T* ptr = deque.front();
+
+    SDL_UnlockMutex(mutex);
+    
+    return ptr;
+}
+
+template<HasPts T>
+void Deque<T>::Pop() {
+    SDL_LockMutex(mutex);
+    while (deque.size() == 0) {
+        SDL_WaitCondition(readCond,mutex);
+    }
+    deque.pop_front();
+    SDL_SignalCondition(writeCond);
+
+    SDL_UnlockMutex(mutex);
+    
 }
 
 

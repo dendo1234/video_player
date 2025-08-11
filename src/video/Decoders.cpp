@@ -95,24 +95,15 @@ int AudioDecodeThread(void* userdata) {
 
         if (lastError == 0) {
             // recebeu frame
-            AVFrame* resultFrame = av_frame_alloc();
-            resultFrame->format = AV_SAMPLE_FMT_S16;
-            resultFrame->ch_layout = data->codecContext->ch_layout;
-            resultFrame->nb_samples = data->codecContext->frame_size;
-            av_frame_get_buffer(resultFrame, 0);
-
-            swr_convert(data->swrContext.get(), (uint8_t**)resultFrame->data, resultFrame->nb_samples, (const uint8_t**)frame->data, frame->nb_samples);
-            resultFrame->pts = frame->pts;
-
-            data->frameQueue.Push(resultFrame);
-
-            // av_frame_free(&frame);
+            data->frameQueue.Push(frame);
+            frame = av_frame_alloc();
             continue;
         }
 
         else if (lastError == AVERROR_EOF || video->m_videoDone) {
             // acabou os frames
             data->frameQueue.Push(nullptr);
+            SDL_Log("Audio Thread Exit");
             return 0;
         }
 

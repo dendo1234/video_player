@@ -4,12 +4,14 @@
 using namespace std;
 
 Player::Player(const string_view& name) {
+    SDL_SetHint(SDL_HINT_LOGGING, "verbose");
     SDL_Init(SDL_INIT_AUDIO);
 
     window = SDL_CreateWindow(name.data(), 640, 360, SDL_WINDOW_RESIZABLE);
     renderer = SDL_CreateRenderer(window, nullptr);
 
     SDL_SetRenderLogicalPresentation(renderer, 640, 360, SDL_LOGICAL_PRESENTATION_LETTERBOX);
+
 
     video = new Video("sync.mp4", renderer);
 

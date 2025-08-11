@@ -58,6 +58,8 @@ struct AudioData {
     AVRational time_base;
     double clock;
     SDL_AudioSpec audioSpec;
+    SDL_AudioStream* m_audioStream;
+
 };
 
 struct VideoData {
@@ -75,7 +77,6 @@ struct VideoData {
 class Video {
 private:
     SDL_AudioDeviceID m_audioDevideID{0};
-    SDL_AudioStream* m_audioStream;
 
     int GetFormatContext(const char* filename);
     void InitializeThreads();
@@ -85,6 +86,7 @@ private:
     SDL_Thread* m_packageReader;
     SDL_Thread* m_videoDecoder;
     SDL_Thread* m_audioDecoder;
+    SDL_Thread* audioConsumer;
 
     double clock{0};
 
@@ -106,6 +108,8 @@ public:
     ~Video();
 
     double GetSyncClock();
+
+    void SyncAudio();
 
     void Render() const;
     void Update(uint64_t dt);
