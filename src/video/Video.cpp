@@ -166,9 +166,8 @@ Video::Video(const char* filename, SDL_Renderer* renderer)
 
     // SDL_AudioStream* stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &m_audioData.audioSpec, AudioCallback, this);
     m_audioDevideID = SDL_OpenAudioDevice(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, nullptr); 
-    SDL_AudioSpec audioDevideSpec;
-    SDL_GetAudioDeviceFormat(m_audioDevideID, &audioDevideSpec, nullptr);
-    m_audioData.m_audioStream = SDL_CreateAudioStream(&m_audioData.audioSpec, &audioDevideSpec);
+    SDL_GetAudioDeviceFormat(m_audioDevideID, &m_audioData.outputAudioSpec, nullptr);
+    m_audioData.m_audioStream = SDL_CreateAudioStream(&m_audioData.audioSpec, &m_audioData.outputAudioSpec);
     if (m_audioData.m_audioStream == nullptr) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Unable to create audio stream: %s", SDL_GetError());
     }

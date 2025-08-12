@@ -28,6 +28,7 @@ public:
     void Pop();
     size_t Size();
     T* GetBeforePts(int64_t pts);
+    T* BlockingGetBeforePts(int64_t pts);
 };
 
 using namespace std;
@@ -55,7 +56,7 @@ void Deque<T>::Push(T* packet) {
         flushed = true;
         SDL_SignalCondition(writeCond);
     } else {
-        while (deque.size() > 10 && !flushed) {
+        while (deque.size() > 200 && !flushed) {
             SDL_WaitCondition(writeCond, mutex);
         }
     }
@@ -154,4 +155,34 @@ T* Deque<T>::GetBeforePts(int64_t pts) {
     SDL_SignalCondition(writeCond);
     SDL_UnlockMutex(mutex);
     return oldPtr;
+}
+
+template <HasPts T>
+T* Deque<T>::BlockingGetBeforePts(int64_t pts) {
+    SDL_LockMutex(mutex);
+    if (deque.size() == 0) {
+        SDL_WaitCondition(readCond,mutex);
+    }
+
+    T* ptr = deque.front();
+    deque.pop_front();
+
+    if (ptr == nullptr) {
+        return nullptr;
+    }
+
+    while (ptr->pts < pts) {
+        if (deque.size() == 0) {
+            SDL_WaitCondition(readCond,mutex);
+        }
+        ptr = deque.front();
+        deque.pop_front();
+        if (ptr == nullptr) {
+            return nullptr;
+        }
+    }
+
+    SDL_SignalCondition(writeCond);
+    SDL_UnlockMutex(mutex);
+    return ptr;
 }

@@ -1,3 +1,4 @@
+#pragma once
 #include <SDL3/SDL.h>
 #include <memory>
 #include <queue>
@@ -58,6 +59,7 @@ struct AudioData {
     AVRational time_base;
     double clock;
     SDL_AudioSpec audioSpec;
+    SDL_AudioSpec outputAudioSpec;
     SDL_AudioStream* m_audioStream;
 
 };
