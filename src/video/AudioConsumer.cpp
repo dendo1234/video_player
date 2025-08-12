@@ -30,20 +30,29 @@ double AudioConsumer::GetSecondsRemainingOnStream() {
     return secondsRemaining;
 }
 
+double AudioConsumer::CalculateDiff(int64_t pts) {
+    double frameStartTime = pts * av_q2d(audioData.time_base);
+    double syncClock = video->GetSyncClock();
+    // double streamQueuedTime = GetSecondsRemainingOnStream();
+    double streamQueuedTime = 0;
+    double diff = frameStartTime - syncClock + streamQueuedTime;
+    return diff;
+}
+
 int AudioConsumer::Run() {
     unsigned int diffCount = 0;
     double diffWeightedSum = 0.0;
     static constexpr double factor = 0.8;
-    static constexpr double diffThreshold = 0.2; // 100 ms
+    static constexpr double diffThreshold = 0.05; // 100 ms
     static constexpr double noSyncThreshold = 0.5; // 100 ms
     static constexpr unsigned int minimalDiffCount = 20;
-    static constexpr double desiredBufferSizeSeconds = 0.1;
+    static constexpr double desiredBufferSizeSeconds = 0.05;
     double diff = 0;
 
     // SDL_AudioSpec audioSpec = GetOutputAudioFormat();
     // const int desiredBufferSize = static_cast<int>(desiredBufferSizeSeconds * audioSpec.freq * audioSpec.channels * SDL_AUDIO_BITSIZE(audioSpec.format));
 
-    while (true) {
+    while (!video->m_videoDone) {
         // uint64_t tic = SDL_GetTicks();
         if (GetSecondsRemainingOnStream() > desiredBufferSizeSeconds) {
             SDL_Delay(10);
@@ -61,7 +70,8 @@ int AudioConsumer::Run() {
         int wantedSamples = frame->nb_samples;
 
         if (frame != nullptr) {
-            diff = video->GetSyncClock() + GetSecondsRemainingOnStream() - frame->pts * av_q2d(audioData.time_base);
+            diff = CalculateDiff(frame->pts);
+            // diff = audioData.clock - GetSecondsRemainingOnStream() - video->GetSyncClock();
             diffWeightedSum = diff + diffWeightedSum * factor;
 
             if (diffCount < minimalDiffCount) {
@@ -70,7 +80,7 @@ int AudioConsumer::Run() {
                 double diffAvg = diffWeightedSum * (1.0-factor);
                 if (fabs(diffAvg) < noSyncThreshold) {
                     if (fabs(diffAvg) > diffThreshold) {
-                        wantedSamples -= static_cast<int>(diffAvg * frame->sample_rate);
+                        wantedSamples += static_cast<int>(diffAvg * frame->sample_rate);
                         int minsize = static_cast<int>(frame->nb_samples * 0.6);
                         int maxsize = static_cast<int>(frame->nb_samples * 1.4);
 
@@ -120,7 +130,7 @@ int AudioConsumer::Run() {
         }
 
         if (numberOfSamples != resultFrame->linesize[0]) {
-            SDL_Log("%f    %d %d", diff, numberOfSamples, resultFrame->linesize[0]);
+            SDL_Log("%f      %f     %d %d", diff, GetSecondsRemainingOnStream(), numberOfSamples, resultFrame->linesize[0]);
         }
 
         audioData.clock = frame->pts * av_q2d(audioData.time_base);
@@ -141,6 +151,7 @@ int AudioConsumer::Run() {
         av_frame_unref(resultFrame);
         // SDL_Log("time to run: %llu, frame queue size: %llu, packate queue size: %llu", SDL_GetTicks() - tic, audioData.frameQueue.Size(), audioData.packetQueue.Size());
     }
+    return 0;
 };
 
 int AudioConsumerThread(void* userdata) {

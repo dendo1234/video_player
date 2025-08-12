@@ -16,6 +16,7 @@ public:
     SDL_AudioSpec GetSourceAudioFormat();
     SDL_AudioSpec GetOutputAudioFormat();
     double GetSecondsRemainingOnStream();
+    double CalculateDiff(int64_t pts);
 
     int Run();
 };

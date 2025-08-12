@@ -222,6 +222,7 @@ Video::Video(const char* filename, SDL_Renderer* renderer)
 }
 
 Video::~Video() {
+    m_videoDone = true;
     m_videoData.packetQueue.Push(nullptr);
     m_audioData.packetQueue.Push(nullptr);
     m_videoData.frameQueue.Push(nullptr);
@@ -230,6 +231,8 @@ Video::~Video() {
     int status;
     SDL_WaitThread(m_packageReader, &status);
     SDL_WaitThread(m_videoDecoder, &status);
+    SDL_WaitThread(m_audioDecoder, &status);
+    SDL_WaitThread(audioConsumer, &status);
 
     // SDL_Log("video framequeue size: %d", m_videoData.frameQueue.Size());
     // SDL_Log("audio framequeue size: %d", m_audioData.frameQueue.Size());
@@ -266,7 +269,7 @@ void Video::Update(uint64_t dt) {
         return;
     }
 
-    clock += dt/1000.0;
+    clock += dt/1000000000.0;
     SDL_SignalCondition(m_videoData.cond);
 
 

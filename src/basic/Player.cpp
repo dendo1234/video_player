@@ -14,7 +14,9 @@ Player::Player(const string_view& name) {
     SDL_SetRenderLogicalPresentation(renderer, 640, 360, SDL_LOGICAL_PRESENTATION_LETTERBOX);
 
 
-    video = new Video("input.mp4", renderer);
+    video = new Video("sync.mp4", renderer);
+
+    DeltaTime();
 
  
 }
@@ -26,8 +28,8 @@ Player::~Player() {
 }
 
 uint64_t Player::DeltaTime() {
-    uint64_t dt = SDL_GetTicks() - time;
-    time = SDL_GetTicks();
+    uint64_t dt = SDL_GetTicksNS() - time;
+    time = SDL_GetTicksNS();
 
     return dt;
 }
