@@ -49,19 +49,16 @@ int AudioConsumer::Run() {
     unsigned int diffCount = 0;
     double diffWeightedSum = 0.0;
     static constexpr double factor = 0.8;
-    static constexpr double diffThreshold = 0.05; // 100 ms
+    static constexpr double diffThreshold = 0.03;
     static constexpr double noSyncThreshold = 0.5; // 100 ms
     static constexpr unsigned int minimalDiffCount = 10;
     static constexpr double desiredBufferSizeSeconds = 0.05;
     double diff = 0;
 
-    // SDL_AudioSpec audioSpec = GetOutputAudioFormat();
-    // const int desiredBufferSize = static_cast<int>(desiredBufferSizeSeconds * audioSpec.freq * audioSpec.channels * SDL_AUDIO_BITSIZE(audioSpec.format));
 
     while (!video->m_videoDone) {
-        // uint64_t tic = SDL_GetTicks();
         if (GetSecondsRemainingOnStream() > desiredBufferSizeSeconds) {
-            SDL_Delay(10);
+            SDL_Delay(20);
             continue;
         }
         
@@ -70,14 +67,10 @@ int AudioConsumer::Run() {
             return 0;
         }
         
-        // if (video->GetSyncClock() < frame->pts * av_q2d(audioData.time_base)) {
-        //     continue;
-        // }
         int wantedSamples = frame->nb_samples;
 
         if (frame != nullptr) {
             diff = CalculateDiff(frame->pts);
-            // diff = audioData.clock - GetSecondsRemainingOnStream() - video->GetSyncClock();
             diffWeightedSum = diff + diffWeightedSum * factor;
 
             if (diffCount < minimalDiffCount) {
@@ -100,6 +93,8 @@ int AudioConsumer::Run() {
                     if (!SDL_ClearAudioStream(audioData.m_audioStream)) {
                         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't clear audio stream: %s", SDL_GetError());
                     }
+
+                    // clear the swr buffer
                     int numberOfSamples  = swr_convert(audioData.swrContext.get(),nullptr,0,nullptr,0);
                     if (numberOfSamples < 0) {
                         char buffer[AV_ERROR_MAX_STRING_SIZE];
@@ -107,6 +102,7 @@ int AudioConsumer::Run() {
                         SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Error swr convert: %s", buffer);
                     }
                     
+                    // TODO: investigate when seeking is done
                     // frame = audioData.frameQueue.BlockingGetBeforePts(static_cast<int64_t>(video->GetSyncClock() / av_q2d(audioData.time_base)));
                 }
             }
@@ -116,6 +112,7 @@ int AudioConsumer::Run() {
         if (resultFrame == nullptr) {
             SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Error to alloc AVFrame");
         }
+        // TODO: Remove this magic numbers
         resultFrame->format = AV_SAMPLE_FMT_S16;
         resultFrame->ch_layout = audioData.codecContext->ch_layout;
         resultFrame->nb_samples = frame->nb_samples*2; // enough space to avoid buffering in the swr context
@@ -141,31 +138,21 @@ int AudioConsumer::Run() {
             av_make_error_string(buffer, AV_ERROR_MAX_STRING_SIZE, numberOfSamples);
             SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Error swr convert: %s", buffer);
         }
-
-        // if (numberOfSamples != resultFrame->linesize[0]) {
-        //     SDL_Log("%f      %f     %d %d", diff, GetSecondsRemainingOnStream(), numberOfSamples, resultFrame->linesize[0]);
-        // }
-
-        audioData.clock = frame->pts * av_q2d(audioData.time_base);
         
-        SDL_Log("audio clock: %f, sync clock: %f, queued: %f, frame size: %d, diff: %f",
-            audioData.clock, video->GetSyncClock(), GetSecondsRemainingOnStream(), numberOfSamples, diff);
-
         if (SDL_GetAudioStreamQueued(audioData.m_audioStream) < 200) {
             SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Low amount of bytes on audio stream, queued: %d, available: %d", SDL_GetAudioStreamQueued(audioData.m_audioStream), SDL_GetAudioStreamAvailable(audioData.m_audioStream));
         }
 
+        // TODO: Remove this magic number
         if (!SDL_PutAudioStreamData(audioData.m_audioStream, resultFrame->data[0], numberOfSamples*4)) {
             SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Unable to put audio stream data: %s", SDL_GetError());
         }
 
-        // SDL_Log("%d %d", SDL_GetAudioStreamQueued(audioData.m_audioStream), SDL_GetAudioStreamAvailable(audioData.m_audioStream));
-
+        audioData.clock = frame->pts * av_q2d(audioData.time_base) + GetSecondsRemaining();
         
         audioData.frameQueue.Pop();
         av_frame_unref(frame);
         av_frame_unref(resultFrame);
-        // SDL_Log("time to run: %llu, frame queue size: %llu, packate queue size: %llu", SDL_GetTicks() - tic, audioData.frameQueue.Size(), audioData.packetQueue.Size());
     }
     return 0;
 };
