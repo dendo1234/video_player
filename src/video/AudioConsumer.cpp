@@ -26,16 +26,22 @@ double AudioConsumer::GetSecondsRemainingOnStream() {
     SDL_AudioSpec audioSpec = GetOutputAudioFormat();
     double bytesPerSecond = audioSpec.freq * audioSpec.channels * SDL_AUDIO_BYTESIZE(audioSpec.format);
 
-    double secondsRemaining = SDL_GetAudioStreamQueued(audioData.m_audioStream) / bytesPerSecond;
+    double secondsRemaining = (SDL_GetAudioStreamQueued(audioData.m_audioStream)) / bytesPerSecond;
     return secondsRemaining;
 }
 
-double AudioConsumer::CalculateDiff(int64_t pts) {
+double AudioConsumer::GetSecondsRemaining() {
+    double swrDelay = swr_get_delay(audioData.swrContext.get(), 1000000) / 1000000;
+
+    double secondsRemaining = GetSecondsRemainingOnStream() + swrDelay;
+    return secondsRemaining;
+}
+
+double AudioConsumer::CalculateDiff([[maybe_unused]] int64_t pts) {
     double frameStartTime = pts * av_q2d(audioData.time_base);
     double syncClock = video->GetSyncClock();
-    // double streamQueuedTime = GetSecondsRemainingOnStream();
-    double streamQueuedTime = 0;
-    double diff = frameStartTime - syncClock + streamQueuedTime;
+    double streamQueuedTime = GetSecondsRemaining();
+    double diff = frameStartTime - (syncClock + streamQueuedTime);
     return diff;
 }
 
@@ -45,7 +51,7 @@ int AudioConsumer::Run() {
     static constexpr double factor = 0.8;
     static constexpr double diffThreshold = 0.05; // 100 ms
     static constexpr double noSyncThreshold = 0.5; // 100 ms
-    static constexpr unsigned int minimalDiffCount = 20;
+    static constexpr unsigned int minimalDiffCount = 10;
     static constexpr double desiredBufferSizeSeconds = 0.05;
     double diff = 0;
 
@@ -94,6 +100,13 @@ int AudioConsumer::Run() {
                     if (!SDL_ClearAudioStream(audioData.m_audioStream)) {
                         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't clear audio stream: %s", SDL_GetError());
                     }
+                    int numberOfSamples  = swr_convert(audioData.swrContext.get(),nullptr,0,nullptr,0);
+                    if (numberOfSamples < 0) {
+                        char buffer[AV_ERROR_MAX_STRING_SIZE];
+                        av_make_error_string(buffer, AV_ERROR_MAX_STRING_SIZE, numberOfSamples);
+                        SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Error swr convert: %s", buffer);
+                    }
+                    
                     // frame = audioData.frameQueue.BlockingGetBeforePts(static_cast<int64_t>(video->GetSyncClock() / av_q2d(audioData.time_base)));
                 }
             }
@@ -105,7 +118,7 @@ int AudioConsumer::Run() {
         }
         resultFrame->format = AV_SAMPLE_FMT_S16;
         resultFrame->ch_layout = audioData.codecContext->ch_layout;
-        resultFrame->nb_samples = wantedSamples;
+        resultFrame->nb_samples = frame->nb_samples*2; // enough space to avoid buffering in the swr context
         int error = av_frame_get_buffer(resultFrame, 0);
         if (error < 0) {
             char buffer[AV_ERROR_MAX_STRING_SIZE];
@@ -129,14 +142,17 @@ int AudioConsumer::Run() {
             SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Error swr convert: %s", buffer);
         }
 
-        if (numberOfSamples != resultFrame->linesize[0]) {
-            SDL_Log("%f      %f     %d %d", diff, GetSecondsRemainingOnStream(), numberOfSamples, resultFrame->linesize[0]);
-        }
+        // if (numberOfSamples != resultFrame->linesize[0]) {
+        //     SDL_Log("%f      %f     %d %d", diff, GetSecondsRemainingOnStream(), numberOfSamples, resultFrame->linesize[0]);
+        // }
 
         audioData.clock = frame->pts * av_q2d(audioData.time_base);
+        
+        SDL_Log("audio clock: %f, sync clock: %f, queued: %f, frame size: %d, diff: %f",
+            audioData.clock, video->GetSyncClock(), GetSecondsRemainingOnStream(), numberOfSamples, diff);
 
         if (SDL_GetAudioStreamQueued(audioData.m_audioStream) < 200) {
-            SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Low amount of bytes on audio stream, queued: %d", SDL_GetAudioStreamQueued(audioData.m_audioStream));
+            SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Low amount of bytes on audio stream, queued: %d, available: %d", SDL_GetAudioStreamQueued(audioData.m_audioStream), SDL_GetAudioStreamAvailable(audioData.m_audioStream));
         }
 
         if (!SDL_PutAudioStreamData(audioData.m_audioStream, resultFrame->data[0], numberOfSamples*4)) {
