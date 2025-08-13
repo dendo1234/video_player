@@ -12,22 +12,27 @@ extern "C" {
 
 int PacketReaderThread(void* userdata) {
     Video* video = (Video*)userdata;
-    AVPacket* packet = av_packet_alloc();
+    AVPacket* packet;
 
-    while (av_read_frame(video->m_formatContext.get(), packet) == 0 && !video->m_videoDone) {
+    while (packet = av_packet_alloc(), av_read_frame(video->m_formatContext.get(), packet) == 0 && !video->m_videoDone) {
         if (packet->stream_index == video->videoStreamIndex) {
             video->m_videoData.packetQueue.Push(packet);
+            continue;
         }
-        else if (packet->stream_index == video->audioStreamIndex) {
-            video->m_audioData.packetQueue.Push(packet);
+        for (auto& audioData : video->audios) {
+            if (packet->stream_index == audioData.streamIndex) {
+                audioData.packetQueue.Push(packet);
+                break;
+            }
         }
-        packet = av_packet_alloc();
     }
+        
     // Leitura de packetes finalizada
-
-
     video->m_videoData.packetQueue.Push(nullptr);
-    video->m_audioData.packetQueue.Push(nullptr);
+    for (auto& audioData : video->audios) {
+        audioData.packetQueue.Push(nullptr);
+    }
+    
     av_packet_free(&packet);
     return 0;
 }
@@ -61,80 +66,53 @@ int Video::GetFormatContext(const char* filename) {
     return 0;
 }
 
-Video::Video(const char* filename, SDL_Renderer* renderer) 
-    : renderer{renderer} {
-    int lastError;
-    lastError = GetFormatContext(filename);
-    if (lastError != 0) {
-        return;
-    }
-
-    // SwsContext* swsContext = sws_getContext(codecContext->width, codecContext->height,
-    //         codecContext->pix_fmt, codecContext->width, codecContext->height,
-    //         AV_PIX_FMT_YUV420P,
-    //         SWS_BILINEAR,
-    //         NULL,
-    //         NULL,
-    //         NULL);
-
+void Video::InitializeStreamsIndexes() {
     // Find the first video stream
     for(unsigned i = 0; i < m_formatContext->nb_streams; i++) {
         if(m_formatContext->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
+            if (videoStreamIndex != -1) {
+                SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "There is more than one video stream in file? Thats undefined!");
+            }
             m_videoData.time_base = m_formatContext->streams[i]->time_base;
             videoStreamIndex = i;
             continue;
         }
 
         if(m_formatContext->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
-            m_audioData.time_base = m_formatContext->streams[i]->time_base;
-            audioStreamIndex = i;
+            AudioData& audioData = audios.emplace_back(this);
+
+            audioData.time_base = m_formatContext->streams[i]->time_base;
+            audioData.streamIndex = i;
+
+            numberOfAudioStreams++;
             continue;
         }
     }
 
+}
 
+int Video::InitializeDecoders() {
+    // Video
     const AVCodec* videoCodec = avcodec_find_decoder(m_formatContext->streams[videoStreamIndex]->codecpar->codec_id);
     if (videoCodec == nullptr) {
         SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Unsuported video decoder: %s", avcodec_get_name(m_formatContext->streams[videoStreamIndex]->codecpar->codec_id));
-        return;
+        return 1;
     }
-
-    const AVCodec* audioCodec = avcodec_find_decoder(m_formatContext->streams[audioStreamIndex]->codecpar->codec_id);
-    if (audioCodec == nullptr) {
-        SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Unsuported audio decoder: %s", avcodec_get_name(m_formatContext->streams[videoStreamIndex]->codecpar->codec_id));
-        return;
-    }
-
 
     AVCodecContext* avCodecContexRaw = avcodec_alloc_context3(videoCodec);
     if (avCodecContexRaw == nullptr) {
         SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Error allocating codec contexts");
-        return;
+        return 1;
     }
     m_videoData.m_videoCodecContext = unique_ptr<AVCodecContext, AVCodecContextDeleter>(avCodecContexRaw);
 
-    avCodecContexRaw = avcodec_alloc_context3(audioCodec);
-    if (avCodecContexRaw == nullptr) {
-        SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Error allocating codec contexts");
-        return;
-    }
-    m_audioData.codecContext = unique_ptr<AVCodecContext, AVCodecContextDeleter>(avCodecContexRaw);
-
-    
-    lastError = avcodec_parameters_to_context(m_videoData.m_videoCodecContext.get(), m_formatContext->streams[videoStreamIndex]->codecpar);
+    int lastError = avcodec_parameters_to_context(m_videoData.m_videoCodecContext.get(), m_formatContext->streams[videoStreamIndex]->codecpar);
     if (lastError < 0) {
         char buffer[AV_ERROR_MAX_STRING_SIZE];
         av_make_error_string(buffer, AV_ERROR_MAX_STRING_SIZE, lastError);
         SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Error codec: %s", buffer);
+        return 1;
     }
-
-    lastError = avcodec_parameters_to_context(m_audioData.codecContext.get(), m_formatContext->streams[audioStreamIndex]->codecpar);
-    if (lastError < 0) {
-        char buffer[AV_ERROR_MAX_STRING_SIZE];
-        av_make_error_string(buffer, AV_ERROR_MAX_STRING_SIZE, lastError);
-        SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Error codec: %s", buffer);
-    }
-    
 
     lastError = avcodec_open2(m_videoData.m_videoCodecContext.get(), videoCodec, nullptr);
     if (lastError < 0) {
@@ -143,11 +121,99 @@ Video::Video(const char* filename, SDL_Renderer* renderer)
         SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Error initializing codecContex to use given codec: %s", buffer);
     }
 
-    lastError = avcodec_open2(m_audioData.codecContext.get(), audioCodec, nullptr);
-    if (lastError < 0) {
-        char buffer[AV_ERROR_MAX_STRING_SIZE];
-        av_make_error_string(buffer, AV_ERROR_MAX_STRING_SIZE, lastError);
-        SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Error initializing codecContex to use given codec: %s", buffer);
+    // Audio
+    for (auto& audioData : audios) {
+        const AVCodec* audioCodec = avcodec_find_decoder(m_formatContext->streams[audioData.streamIndex]->codecpar->codec_id);
+        if (audioCodec == nullptr) {
+            SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Unsuported audio decoder: %s", avcodec_get_name(m_formatContext->streams[videoStreamIndex]->codecpar->codec_id));
+            return 1;
+        }
+
+        avCodecContexRaw = avcodec_alloc_context3(audioCodec);
+        if (avCodecContexRaw == nullptr) {
+            SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Error allocating codec contexts");
+            return 1;
+        }
+        audioData.codecContext = unique_ptr<AVCodecContext, AVCodecContextDeleter>(avCodecContexRaw);
+
+        lastError = avcodec_parameters_to_context(audioData.codecContext.get(), m_formatContext->streams[audioData.streamIndex]->codecpar);
+        if (lastError < 0) {
+            char buffer[AV_ERROR_MAX_STRING_SIZE];
+            av_make_error_string(buffer, AV_ERROR_MAX_STRING_SIZE, lastError);
+            SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Error codec: %s", buffer);
+        }
+
+        lastError = avcodec_open2(audioData.codecContext.get(), audioCodec, nullptr);
+        if (lastError < 0) {
+            char buffer[AV_ERROR_MAX_STRING_SIZE];
+            av_make_error_string(buffer, AV_ERROR_MAX_STRING_SIZE, lastError);
+            SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Error initializing codecContex to use given codec: %s", buffer);
+        }
+    }
+    return 0;
+}
+
+void Video::InitializeAudioStreams() {
+    for (auto& audioData : audios) {
+        audioData.audioSpec.freq = audioData.codecContext->sample_rate;
+        audioData.audioSpec.format = SDL_AUDIO_S16;
+        audioData.audioSpec.channels = static_cast<uint8_t>(audioData.codecContext->ch_layout.nb_channels);
+
+        SDL_GetAudioDeviceFormat(m_audioDevideID, &audioData.outputAudioSpec, nullptr);
+        audioData.m_audioStream = SDL_CreateAudioStream(&audioData.audioSpec, &audioData.outputAudioSpec);
+        if (audioData.m_audioStream == nullptr) {
+            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Unable to create audio stream: %s", SDL_GetError());
+        }
+
+        if (!SDL_BindAudioStream(m_audioDevideID, audioData.m_audioStream)) {
+            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Unable to bind audio stream: %s", SDL_GetError());
+        }
+
+        if (!SDL_ResumeAudioDevice(m_audioDevideID)) {
+            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Unable to resume audio device: %s", SDL_GetError());
+        }
+    }
+}
+
+int Video::InitializeSwrContexts() {
+    for (auto& audioData : audios) {
+        AVChannelLayout inChannelLayout;
+        av_channel_layout_default(&inChannelLayout, audioData.audioSpec.channels);
+        SwrContext *swr = nullptr;
+        int lastError = swr_alloc_set_opts2(&swr, &inChannelLayout, AV_SAMPLE_FMT_S16, audioData.audioSpec.freq, &audioData.codecContext->ch_layout, audioData.codecContext->sample_fmt, audioData.codecContext->sample_rate, 0, nullptr);
+        if (lastError != 0) {
+            char buffer[AV_ERROR_MAX_STRING_SIZE];
+            av_make_error_string(buffer, AV_ERROR_MAX_STRING_SIZE, lastError);
+            SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Error alloc swr: %s", buffer);
+            return 1;
+        }
+        lastError = swr_init(swr);
+        if (lastError != 0) {
+            char buffer[AV_ERROR_MAX_STRING_SIZE];
+            av_make_error_string(buffer, AV_ERROR_MAX_STRING_SIZE, lastError);
+            SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Error initing swr: %s", buffer);
+            return 1;
+        }
+        audioData.swrContext = unique_ptr<SwrContext, SwrContextDeleter>(swr);
+    }
+    return 0;
+}
+
+Video::Video(const char* filename, SDL_Renderer* renderer) 
+    : renderer{renderer} {
+
+    audios.reserve(6);
+    
+    int lastError = GetFormatContext(filename);
+    if (lastError != 0) {
+        return;
+    }
+
+    InitializeStreamsIndexes();
+
+    lastError = InitializeDecoders();
+    if (lastError != 0) {
+        return;
     }
 
 
@@ -159,56 +225,15 @@ Video::Video(const char* filename, SDL_Renderer* renderer)
         SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Error initializing SwsContext");
     }
 
-    
-    m_audioData.audioSpec.freq = m_audioData.codecContext->sample_rate;
-    m_audioData.audioSpec.format = SDL_AUDIO_S16;
-    m_audioData.audioSpec.channels = static_cast<uint8_t>(m_audioData.codecContext->ch_layout.nb_channels);
 
-    // SDL_AudioStream* stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &m_audioData.audioSpec, AudioCallback, this);
     m_audioDevideID = SDL_OpenAudioDevice(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, nullptr); 
-    SDL_GetAudioDeviceFormat(m_audioDevideID, &m_audioData.outputAudioSpec, nullptr);
-    m_audioData.m_audioStream = SDL_CreateAudioStream(&m_audioData.audioSpec, &m_audioData.outputAudioSpec);
-    if (m_audioData.m_audioStream == nullptr) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Unable to create audio stream: %s", SDL_GetError());
-    }
 
-    if (!SDL_BindAudioStream(m_audioDevideID, m_audioData.m_audioStream)) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Unable to bind audio stream: %s", SDL_GetError());
-    }
-
-    if (!SDL_ResumeAudioDevice(m_audioDevideID)) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Unable to resume audio device: %s", SDL_GetError());
-    }
-
-
-
-    // SDL_AudioStream* audioStream = SDL_CreateAudioStream(&m_audioData.audioSpec, &m_audioData.audioSpec);
-    // SDL_SetAudioStreamGetCallback(audioStream, AudioCallback, this);
-
-    // SDL_BindAudioStream(m_audioDevideID, audioStream);
-
-    // SDL_ResumeAudioDevice(m_audioDevideID);
-
-    AVChannelLayout inChannelLayout;
-    av_channel_layout_default(&inChannelLayout, m_audioData.audioSpec.channels);
-    SwrContext *swr = nullptr;
-    lastError = swr_alloc_set_opts2(&swr, &inChannelLayout, AV_SAMPLE_FMT_S16, m_audioData.audioSpec.freq, &m_audioData.codecContext->ch_layout, m_audioData.codecContext->sample_fmt, m_audioData.codecContext->sample_rate, 0, nullptr);
-    if (lastError != 0) {
-        char buffer[AV_ERROR_MAX_STRING_SIZE];
-        av_make_error_string(buffer, AV_ERROR_MAX_STRING_SIZE, lastError);
-        SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Error alloc swr: %s", buffer);
-        return;
-    }
-    lastError = swr_init(swr);
-    if (lastError != 0) {
-        char buffer[AV_ERROR_MAX_STRING_SIZE];
-        av_make_error_string(buffer, AV_ERROR_MAX_STRING_SIZE, lastError);
-        SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Error initing swr: %s", buffer);
-        return;
-    }
-    m_audioData.swrContext = unique_ptr<SwrContext, SwrContextDeleter>(swr);
-
+    InitializeAudioStreams();
     
+    lastError = InitializeSwrContexts();
+    if (lastError != 0) {
+        return;
+    }
      
     // initialize VideoData
     m_videoData.texture = unique_ptr<SDL_Texture, SDL_TextureDeleter>(SDL_CreateTexture(renderer, SDL_PIXELFORMAT_YV12, SDL_TEXTUREACCESS_STREAMING, m_videoData.m_videoCodecContext->width, m_videoData.m_videoCodecContext->height));
@@ -221,39 +246,58 @@ Video::Video(const char* filename, SDL_Renderer* renderer)
     [[maybe_unused]] int framerate = static_cast<int>((double)m_videoData.m_videoCodecContext->framerate.den * 1000 / m_videoData.m_videoCodecContext->framerate.num);
 }
 
+// TODO: make more organized destructor
 Video::~Video() {
     m_videoDone = true;
     m_videoData.packetQueue.Push(nullptr);
-    m_audioData.packetQueue.Push(nullptr);
     m_videoData.frameQueue.Push(nullptr);
-    m_audioData.frameQueue.Push(nullptr);
+
+    for (auto& audioData : audios) {
+        audioData.packetQueue.Push(nullptr);
+        audioData.frameQueue.Push(nullptr);
+
+    }
+    
+
     SDL_CloseAudioDevice(m_audioDevideID);
     int status;
     SDL_WaitThread(m_packageReader, &status);
     SDL_WaitThread(m_videoDecoder, &status);
-    SDL_WaitThread(m_audioDecoder, &status);
-    SDL_WaitThread(audioConsumer, &status);
+    for (auto& audioData : audios) {
+        SDL_WaitThread(audioData.audioDecoder, &status);
+        SDL_WaitThread(audioData.audioConsumer, &status);
+    }
+    
 
-    // SDL_Log("video framequeue size: %d", m_videoData.frameQueue.Size());
-    // SDL_Log("audio framequeue size: %d", m_audioData.frameQueue.Size());
-
+    // TODO: Verify if this is necessary
     m_videoData.frameQueue.Push(nullptr);
-    m_audioData.frameQueue.Push(nullptr);
+    for (auto& audioData : audios) {
+        audioData.packetQueue.Push(nullptr);
+        audioData.frameQueue.Push(nullptr);
+    }
 
 	AVFrame* f;
 	while ((f = m_videoData.frameQueue.Get()) != nullptr) {
 		av_frame_free(&f);
 	}
-	while ((f = m_audioData.frameQueue.Get()) != nullptr) {
-		av_frame_free(&f);
-	}
+    for (auto& audioData : audios) {
+        while ((f = audioData.frameQueue.Get()) != nullptr) {
+            av_frame_free(&f);
+        }
+    }
 }
 
 void Video::InitializeThreads() {
     m_packageReader = SDL_CreateThread(PacketReaderThread, "Package reader", (void*)this);
     m_videoDecoder = SDL_CreateThread(VideoDecodeThread, "Video decoder", (void*)this);
-    m_audioDecoder = SDL_CreateThread(AudioDecodeThread, "Audio decoder", (void*)this);
-    audioConsumer = SDL_CreateThread(AudioConsumerThread, "Audio Consumer", (void*)this);
+    for (auto& audioData : audios) {
+        char audioDecoderName[32] = "Audio Decoder ";
+        itoa(audioData.streamIndex, audioDecoderName+14,10);
+        char audioConsumerName[32] = "Audio Consumer ";
+        itoa(audioData.streamIndex, audioDecoderName+15,10);
+        audioData.audioDecoder = SDL_CreateThread(AudioDecodeThread, audioDecoderName, static_cast<void*>(&audioData));
+        audioData.audioConsumer = SDL_CreateThread(AudioConsumerThread, audioConsumerName, static_cast<void*>(&audioData));
+    }
 }
 
 void Video::Start() {

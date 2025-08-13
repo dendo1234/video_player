@@ -1,8 +1,7 @@
 #include <video/AudioConsumer.hpp>
 
-AudioConsumer::AudioConsumer(Video* video) 
-    : video(video),
-    audioData(video->m_audioData) {
+AudioConsumer::AudioConsumer(AudioData* audioData) 
+    : audioData(*audioData) {
 
 }
 
@@ -39,7 +38,7 @@ double AudioConsumer::GetSecondsRemaining() {
 
 double AudioConsumer::CalculateDiff([[maybe_unused]] int64_t pts) {
     double frameStartTime = pts * av_q2d(audioData.time_base);
-    double syncClock = video->GetSyncClock();
+    double syncClock = audioData.video->GetSyncClock();
     double streamQueuedTime = GetSecondsRemaining();
     double diff = frameStartTime - (syncClock + streamQueuedTime);
     return diff;
@@ -56,7 +55,7 @@ int AudioConsumer::Run() {
     double diff = 0;
 
 
-    while (!video->m_videoDone) {
+    while (!audioData.video->m_videoDone) {
         if (GetSecondsRemainingOnStream() > desiredBufferSizeSeconds) {
             SDL_Delay(20);
             continue;
@@ -158,6 +157,6 @@ int AudioConsumer::Run() {
 };
 
 int AudioConsumerThread(void* userdata) {
-    AudioConsumer audioConsumer(static_cast<Video*>(userdata));
+    AudioConsumer audioConsumer(static_cast<AudioData*>(userdata));
     return audioConsumer.Run();
 };

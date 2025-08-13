@@ -2,6 +2,7 @@
 #include <SDL3/SDL.h>
 #include <memory>
 #include <queue>
+#include <array>
 #include <concepts>
 #include <string>
 #include <video/Deque.hpp>
@@ -51,8 +52,10 @@ struct SDL_TextureDeleter {
     }
 };
 
+class Video;
 
 struct AudioData {
+    Video* video;
     std::unique_ptr<AVCodecContext, AVCodecContextDeleter> codecContext;
     std::unique_ptr<SwrContext, SwrContextDeleter> swrContext;
     Deque<AVPacket> packetQueue;
@@ -62,7 +65,14 @@ struct AudioData {
     SDL_AudioSpec audioSpec;
     SDL_AudioSpec outputAudioSpec;
     SDL_AudioStream* m_audioStream;
+    int streamIndex = -1;
+    SDL_Thread* audioDecoder;
+    SDL_Thread* audioConsumer;
 
+    AudioData() {}
+    AudioData(Video* video) 
+        : video{video} {
+    }
 };
 
 struct VideoData {
@@ -82,14 +92,16 @@ private:
     SDL_AudioDeviceID m_audioDevideID{0};
 
     int GetFormatContext(const char* filename);
+    void InitializeStreamsIndexes();
+    int InitializeDecoders();
+    void InitializeAudioStreams();
+    int InitializeSwrContexts();
     void InitializeThreads();
 
     SDL_Renderer* renderer;
 
     SDL_Thread* m_packageReader;
     SDL_Thread* m_videoDecoder;
-    SDL_Thread* m_audioDecoder;
-    SDL_Thread* audioConsumer;
 
     Clock clock;
 
@@ -97,9 +109,9 @@ public:
 
     std::unique_ptr<AVFormatContext, AVFormatContextDeleter> m_formatContext;
     int videoStreamIndex = -1;
-    int audioStreamIndex = -1;
+    int numberOfAudioStreams = 0;
 
-    AudioData m_audioData;
+    std::vector<AudioData> audios;
     VideoData m_videoData;
 
 

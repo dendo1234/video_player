@@ -4,11 +4,11 @@
 int AudioConsumerThread(void* userdata);
 
 class AudioConsumer {
-    Video* video;
     AudioData& audioData;
 
 public:
-    AudioConsumer(Video* video);
+    AudioConsumer();
+    AudioConsumer(AudioData* audioData);
     ~AudioConsumer();
 
 

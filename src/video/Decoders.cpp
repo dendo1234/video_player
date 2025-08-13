@@ -83,8 +83,8 @@ int VideoDecodeThread(void* userdata) {
 
 int AudioDecodeThread(void* userdata) {
     int lastError;
-    Video* video = (Video*)userdata;
-    AudioData* data = &video->m_audioData;
+    AudioData* data = static_cast<AudioData*>(userdata);
+    Video* video = data->video;
     AVFrame* frame = av_frame_alloc();
 
     AVPacket* packet;
@@ -133,7 +133,7 @@ int AudioDecodeThread(void* userdata) {
 
             else if (lastError == AVERROR(EAGAIN)) {
                 // precisa ler mais frames
-                video->m_videoData.packetQueue.PushFront(packet);
+                data->packetQueue.PushFront(packet);
                 continue;
             }
 
