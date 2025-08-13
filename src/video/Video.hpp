@@ -5,6 +5,7 @@
 #include <concepts>
 #include <string>
 #include <video/Deque.hpp>
+#include <basic/Clock.hpp>
 
 extern "C" {
 #include "libavcodec/avcodec.h"
@@ -90,7 +91,7 @@ private:
     SDL_Thread* m_audioDecoder;
     SDL_Thread* audioConsumer;
 
-    double clock{0};
+    Clock clock;
 
 public:
 

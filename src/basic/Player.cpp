@@ -11,10 +11,11 @@ Player::Player(const string_view& name) {
     window = SDL_CreateWindow(name.data(), 640, 360, SDL_WINDOW_RESIZABLE);
     renderer = SDL_CreateRenderer(window, nullptr);
 
+
     SDL_SetRenderLogicalPresentation(renderer, 640, 360, SDL_LOGICAL_PRESENTATION_LETTERBOX);
 
 
-    video = new Video("sync.mp4", renderer);
+    video = new Video("input.mp4", renderer);
 
     DeltaTime();
 

@@ -12,11 +12,10 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]] int argc, [[maybe_un
 SDL_AppResult SDL_AppIterate(void *appstate) {
     Player* player = static_cast<Player*>(appstate);
 
+    static const uint64_t FRAME_TIME = 16666667;
+    uint64_t frameStart = SDL_GetTicksNS();
+
     uint64_t dt = player->DeltaTime();
-    // SDL_Log("%llu", dt);
-    if (dt == 0) {
-        return SDL_APP_CONTINUE;
-    }
 
     player->video->Update(dt);
 
@@ -24,6 +23,10 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     player->video->Render();
     SDL_RenderPresent(player->renderer);
 
+    uint64_t frameTime = SDL_GetTicksNS() - frameStart;
+    if (frameTime < FRAME_TIME) {
+        SDL_DelayNS(FRAME_TIME - frameTime); 
+    }
     return SDL_APP_CONTINUE;
 };
 

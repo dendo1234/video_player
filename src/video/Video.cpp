@@ -261,7 +261,7 @@ void Video::Start() {
 }
 
 double Video::GetSyncClock() {
-    return clock;
+    return clock.GetTime();
 }
 
 void Video::Update(uint64_t dt) {
@@ -269,7 +269,7 @@ void Video::Update(uint64_t dt) {
         return;
     }
 
-    clock += dt/1000000000.0;
+    clock.UpdateDt(dt/1e9);
     SDL_SignalCondition(m_videoData.cond);
 
 
