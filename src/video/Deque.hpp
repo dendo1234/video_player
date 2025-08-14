@@ -1,3 +1,4 @@
+#pragma once
 #include <concepts>
 #include <deque>
 #include <SDL3/SDL.h>

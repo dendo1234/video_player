@@ -1,5 +1,6 @@
 #include <video/Decoders.hpp>
 #include <video/Video.hpp>
+#include <video/AudioData.hpp>
 
 int VideoDecodeThread(void* userdata) {
     int lastError = 0;

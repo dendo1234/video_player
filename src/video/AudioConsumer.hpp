@@ -1,5 +1,6 @@
 #pragma once
 #include <video/Video.hpp>
+#include <video/AudioData.hpp>
 
 int AudioConsumerThread(void* userdata);
 

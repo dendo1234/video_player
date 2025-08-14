@@ -1,6 +1,7 @@
 #include <video/Video.hpp>
 #include <video/Decoders.hpp>
 #include <video/AudioConsumer.hpp>
+#include <video/AudioData.hpp>
 
 extern "C" {
 #include "libavcodec/avcodec.h"
@@ -61,7 +62,7 @@ int Video::GetFormatContext(const char* filename) {
     }
 
     #ifndef NDEBUG
-    // av_dump_format(m_formatContext.get(), 0, filename, 0);
+    av_dump_format(m_formatContext.get(), 0, filename, 0);
     #endif
     return 0;
 }

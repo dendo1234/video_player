@@ -7,6 +7,9 @@
 #include <string>
 #include <video/Deque.hpp>
 #include <basic/Clock.hpp>
+#include <video/AudioData.hpp>
+#include <video/Deleters.hpp>
+#include <video/VideoData.hpp>
 
 extern "C" {
 #include "libavcodec/avcodec.h"
@@ -16,76 +19,8 @@ extern "C" {
 #include "libswresample/swresample.h"
 }
 
-struct AVFormatContextDeleter {
-    void operator()(AVFormatContext* ptr) {
-        avformat_close_input(&ptr);
-    }
-};
 
-struct SwsContextDeleter {
-    void operator()(SwsContext* ptr) {
-        sws_freeContext(ptr);
-    }
-};
 
-struct AVCodecContextDeleter {
-    void operator()(AVCodecContext* ptr) {
-        avcodec_free_context(&ptr);
-    }
-};
-
-struct SwrContextDeleter {
-    void operator()(SwrContext* ptr) {
-        swr_free(&ptr);
-    }
-};
-
-struct AVPacketDeleter {
-    void operator()(AVPacket* ptr) {
-        av_packet_free(&ptr);
-    }
-};
-
-struct SDL_TextureDeleter {
-    void operator()(SDL_Texture* ptr) {
-        SDL_DestroyTexture(ptr);
-    }
-};
-
-class Video;
-
-struct AudioData {
-    Video* video;
-    std::unique_ptr<AVCodecContext, AVCodecContextDeleter> codecContext;
-    std::unique_ptr<SwrContext, SwrContextDeleter> swrContext;
-    Deque<AVPacket> packetQueue;
-    Deque<AVFrame> frameQueue;
-    AVRational time_base;
-    double clock;
-    SDL_AudioSpec audioSpec;
-    SDL_AudioSpec outputAudioSpec;
-    SDL_AudioStream* m_audioStream;
-    int streamIndex = -1;
-    SDL_Thread* audioDecoder;
-    SDL_Thread* audioConsumer;
-
-    AudioData() {}
-    AudioData(Video* video) 
-        : video{video} {
-    }
-};
-
-struct VideoData {
-    std::unique_ptr<AVCodecContext, AVCodecContextDeleter> m_videoCodecContext;
-    std::unique_ptr<SwsContext, SwsContextDeleter> m_swsContext;
-    Deque<AVPacket> packetQueue;
-    Deque<AVFrame> frameQueue;
-    SDL_Mutex* mutex;
-    SDL_Condition* cond;
-    AVRational time_base;
-    double clock;
-    std::unique_ptr<SDL_Texture, SDL_TextureDeleter> texture;
-};
 
 class Video {
 private:
