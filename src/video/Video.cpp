@@ -201,8 +201,6 @@ int Video::InitializeSwrContexts() {
 
 Video::Video(const char* filename, SDL_Renderer* renderer) 
     : renderer{renderer} {
-
-    audios.reserve(6);
     
     int lastError = GetFormatContext(filename);
     if (lastError != 0) {
