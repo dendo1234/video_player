@@ -1,5 +1,6 @@
 #include <stream/AudioStream.hpp>
 #include <video/Video.hpp>
+#include <format>
 
 using namespace std;
 
@@ -18,12 +19,14 @@ AudioStream::AudioStream(Video* video, std::unique_ptr<AVCodecContext, AVCodecCo
 
 void AudioStream::InitializeSDLStream() {
     SDL_GetAudioDeviceFormat(video->GetAudioDeviceID(), &outputAudioSpec, nullptr);
-    sdlAudioStream = SDL_CreateAudioStream(&audioSpec, &outputAudioSpec);
-    if (sdlAudioStream == nullptr) {
+    SDL_AudioStream* sdlAudioStreamRaw = SDL_CreateAudioStream(&audioSpec, &outputAudioSpec);
+    if (sdlAudioStreamRaw == nullptr) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Unable to create audio stream: %s", SDL_GetError());
     }
 
-    if (!SDL_BindAudioStream(video->GetAudioDeviceID(), sdlAudioStream)) {
+    sdlAudioStream = unique_ptr<SDL_AudioStream, SDL_AudioStreamDeleter>(sdlAudioStreamRaw);
+
+    if (!SDL_BindAudioStream(video->GetAudioDeviceID(), sdlAudioStream.get())) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Unable to bind audio stream: %s", SDL_GetError());
     }
 }
@@ -49,8 +52,8 @@ void AudioStream::InitializeSwrContext() {
 }
 
 void AudioStream::CreateThreads() {
-    string name = "Audio decoder " + to_string(streamIndex);
-    string name2 = "Audio Consumer " + to_string(streamIndex);
+    string name = format("Audio decoder {}", streamIndex);
+    string name2 = format("Audio consumer {}", streamIndex);
     decoderThread = unique_ptr<SDL_Thread, SDL_ThreadDeleter>(SDL_CreateThread(Stream::DecoderThread, name.c_str(), (void*)this));
     audioConsumer = unique_ptr<SDL_Thread, SDL_ThreadDeleter>(SDL_CreateThread(AudioStream::AudioConsumerThreadWrapper, name2.c_str(), (void*)this));
 }
@@ -69,13 +72,13 @@ void AudioStream::Flush() {
 
 SDL_AudioSpec AudioStream::GetSourceAudioFormat() {
     SDL_AudioSpec audioFormat;
-    SDL_GetAudioStreamFormat(sdlAudioStream, &audioFormat, nullptr);
+    SDL_GetAudioStreamFormat(sdlAudioStream.get(), &audioFormat, nullptr);
     return audioFormat;
 }
 
 SDL_AudioSpec AudioStream::GetOutputAudioFormat() {
     SDL_AudioSpec audioFormat;
-    SDL_GetAudioStreamFormat(sdlAudioStream, nullptr, &audioFormat);
+    SDL_GetAudioStreamFormat(sdlAudioStream.get(), nullptr, &audioFormat);
     return audioFormat;
 }
 
@@ -83,7 +86,7 @@ double AudioStream::GetSecondsRemainingOnStream() {
     SDL_AudioSpec audioSpec = GetOutputAudioFormat();
     double bytesPerSecond = audioSpec.freq * audioSpec.channels * SDL_AUDIO_BYTESIZE(audioSpec.format);
 
-    double secondsRemaining = (SDL_GetAudioStreamQueued(sdlAudioStream)) / bytesPerSecond;
+    double secondsRemaining = (SDL_GetAudioStreamQueued(sdlAudioStream.get())) / bytesPerSecond;
     return secondsRemaining;
 }
 
@@ -147,7 +150,7 @@ int AudioStream::AudioConsumerThread() {
 
                     diffCount = 0;
                     diffWeightedSum = 0;
-                    if (!SDL_ClearAudioStream(sdlAudioStream)) {
+                    if (!SDL_ClearAudioStream(sdlAudioStream.get())) {
                         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't clear audio stream: %s", SDL_GetError());
                     }
 
@@ -196,12 +199,12 @@ int AudioStream::AudioConsumerThread() {
             SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Error swr convert: %s", buffer);
         }
         
-        if (SDL_GetAudioStreamQueued(sdlAudioStream) < 200) {
-            SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Low amount of bytes on audio stream, queued: %d, available: %d", SDL_GetAudioStreamQueued(sdlAudioStream), SDL_GetAudioStreamAvailable(sdlAudioStream));
+        if (SDL_GetAudioStreamQueued(sdlAudioStream.get()) < 200) {
+            SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Low amount of bytes on audio stream, queued: %d, available: %d", SDL_GetAudioStreamQueued(sdlAudioStream.get()), SDL_GetAudioStreamAvailable(sdlAudioStream.get()));
         }
 
         // TODO: Remove this magic number
-        if (!SDL_PutAudioStreamData(sdlAudioStream, resultFrame->data[0], numberOfSamples*4)) {
+        if (!SDL_PutAudioStreamData(sdlAudioStream.get(), resultFrame->data[0], numberOfSamples*4)) {
             SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Unable to put audio stream data: %s", SDL_GetError());
         }
 

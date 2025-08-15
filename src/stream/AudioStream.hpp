@@ -7,7 +7,7 @@ private:
 
     SDL_AudioSpec audioSpec;
     SDL_AudioSpec outputAudioSpec;
-    SDL_AudioStream* sdlAudioStream;
+    std::unique_ptr<SDL_AudioStream, SDL_AudioStreamDeleter> sdlAudioStream;
     std::unique_ptr<SDL_Thread, SDL_ThreadDeleter> audioConsumer;
 
     void InitializeSwrContext();

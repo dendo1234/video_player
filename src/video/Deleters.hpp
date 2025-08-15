@@ -70,3 +70,9 @@ struct SDL_ThreadDeleter {
         SDL_WaitThread(ptr, &status);
     }
 };
+
+struct SDL_AudioStreamDeleter {
+    void operator()(SDL_AudioStream* ptr) {
+        SDL_DestroyAudioStream(ptr);
+    }
+};
