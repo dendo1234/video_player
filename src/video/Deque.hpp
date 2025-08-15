@@ -25,6 +25,7 @@ public:
     void PushFront(T data);
     T Get();
     void Pop();
+    void Flush();
     size_t Size();
     T GetBeforePts(int64_t pts);
     T BlockingGetBeforePts(int64_t pts);

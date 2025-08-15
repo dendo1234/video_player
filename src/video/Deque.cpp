@@ -65,6 +65,15 @@ void Deque<T>::Pop() {
     
 }
 
+template<HasPts T>
+void Deque<T>::Flush() {
+    SDL_LockMutex(mutex.get());
+    deque.clear();
+    // Unsure if there should be a signal here. The lack of it results in deadlocks, 
+    // and the presence may have a thread stuck at the Push method
+    SDL_SignalCondition(cond.get());
+    SDL_UnlockMutex(mutex.get());
+}
 
 template<HasPts T>
 size_t Deque<T>::Size() {
