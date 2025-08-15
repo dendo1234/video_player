@@ -18,7 +18,7 @@ void VideoStream::InitializeSwsContext() {
 }
 
 void VideoStream::CreateThreads() {
-    decoderThread = SDL_CreateThread(Stream::DecoderThread, "Video decoder", (void*)this);
+    decoderThread = std::unique_ptr<SDL_Thread,SDL_ThreadDeleter>(SDL_CreateThread(Stream::DecoderThread, "Video decoder", (void*)this));
 }
 
 void VideoStream::Flush() {

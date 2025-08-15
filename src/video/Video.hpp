@@ -35,7 +35,7 @@ private:
     SDL_Renderer* renderer;
     std::unique_ptr<SDL_Texture, SDL_TextureDeleter> texture;
 
-    SDL_Thread* m_packageReader;
+    std::unique_ptr<SDL_Thread, SDL_ThreadDeleter> packageReader;
 
     Clock clock;
 

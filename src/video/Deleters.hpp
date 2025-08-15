@@ -57,3 +57,10 @@ struct SDL_ConditionDeleter {
         SDL_DestroyCondition(ptr);
     }
 };
+
+struct SDL_ThreadDeleter {
+    void operator()(SDL_Thread* ptr) {
+        int status;
+        SDL_WaitThread(ptr, &status);
+    }
+};

@@ -50,8 +50,8 @@ void AudioStream::InitializeSwrContext() {
 void AudioStream::CreateThreads() {
     string name = "Audio decoder " + to_string(streamIndex);
     string name2 = "Audio Consumer " + to_string(streamIndex);
-    decoderThread = SDL_CreateThread(Stream::DecoderThread, name.c_str(), (void*)this);
-    audioConsumer = SDL_CreateThread(AudioConsumer::AudioConsumerThread, name2.c_str(), (void*)this);
+    decoderThread = unique_ptr<SDL_Thread, SDL_ThreadDeleter>(SDL_CreateThread(Stream::DecoderThread, name.c_str(), (void*)this));
+    audioConsumer = unique_ptr<SDL_Thread, SDL_ThreadDeleter>(SDL_CreateThread(AudioConsumer::AudioConsumerThread, name2.c_str(), (void*)this));
 }
 
 void AudioStream::Flush() {

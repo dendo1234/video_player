@@ -110,13 +110,6 @@ Video::~Video() {
     
 
     SDL_CloseAudioDevice(m_audioDevideID);
-    // int status;
-    // SDL_WaitThread(m_packageReader, &status);
-    // SDL_WaitThread(m_videoDecoder, &status);
-    // for (auto& audioData : audios) {
-    //     SDL_WaitThread(audioData.audioDecoder, &status);
-    //     SDL_WaitThread(audioData.audioConsumer, &status);
-    // }
     
     // TODO: Verify if this is necessary
     // I supose not but we will see
@@ -139,7 +132,7 @@ Video::~Video() {
 }
 
 void Video::InitializeThreads() {
-    m_packageReader = SDL_CreateThread(PacketReaderThread, "Package reader", (void*)this);
+    packageReader = unique_ptr<SDL_Thread, SDL_ThreadDeleter>(SDL_CreateThread(PacketReaderThread, "Package reader", (void*)this));
 }
 
 void Video::FlushStreams() {

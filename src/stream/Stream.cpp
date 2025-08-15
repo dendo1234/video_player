@@ -99,6 +99,5 @@ int Stream::DecoderThread(void* userdata) {
     if (packet != nullptr) {
         av_packet_free(&packet);
     }
-    SDL_Log("Decoder exit");
     return 0;
 }

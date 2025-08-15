@@ -22,7 +22,7 @@ protected:
     AVRational timeBase;
 
     static int DecoderThread(void* userdata);
-    SDL_Thread* decoderThread;
+    std::unique_ptr<SDL_Thread,SDL_ThreadDeleter> decoderThread;
 
     virtual void CreateThreads() = 0;
 public:
