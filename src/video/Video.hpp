@@ -7,9 +7,10 @@
 #include <string>
 #include <video/Deque.hpp>
 #include <basic/Clock.hpp>
-#include <video/AudioData.hpp>
 #include <video/Deleters.hpp>
-#include <video/VideoData.hpp>
+#include <video/MediaFile.hpp>
+#include <stream/VideoStream.hpp>
+#include <stream/AudioStream.hpp>
 
 extern "C" {
 #include "libavcodec/avcodec.h"
@@ -23,34 +24,32 @@ extern "C" {
 
 
 class Video {
+public:
+    bool m_videoDone{false};
 private:
+    MediaFile mediaFile;
+    VideoStream videoStream;
     SDL_AudioDeviceID m_audioDevideID{0};
-
-    int GetFormatContext(const char* filename);
-    void InitializeStreamsIndexes();
-    int InitializeDecoders();
-    void InitializeAudioStreams();
-    int InitializeSwrContexts();
-    void InitializeThreads();
+    std::vector<AudioStream> audioStreams;
 
     SDL_Renderer* renderer;
+    std::unique_ptr<SDL_Texture, SDL_TextureDeleter> texture;
 
     SDL_Thread* m_packageReader;
-    SDL_Thread* m_videoDecoder;
 
     Clock clock;
 
+    unique_ptr<AVCodecContext, AVCodecContextDeleter> InitializeDecoder(int streamIndex);
+    VideoStream InitializeVideoStream();
+    std::vector<AudioStream> InitializeAudioStreams();
+    void InitializeThreads();
+
+    void FlushStreams();
+
+    static int PacketReaderThread(void* userdata);
+
+
 public:
-
-    std::unique_ptr<AVFormatContext, AVFormatContextDeleter> m_formatContext;
-    int videoStreamIndex = -1;
-    int numberOfAudioStreams = 0;
-
-    std::vector<AudioData> audios;
-    VideoData m_videoData;
-
-
-    bool m_videoDone{false};
     long long int m_startTick{-0};
 
 
@@ -58,8 +57,7 @@ public:
     ~Video();
 
     double GetSyncClock();
-
-    void SyncAudio();
+    SDL_AudioDeviceID GetAudioDeviceID();
 
     void Render() const;
     void Update(uint64_t dt);
@@ -74,3 +72,6 @@ bool inline Video::Is(const std::string& type) const {
     return type == "Video";
 }
 
+inline SDL_AudioDeviceID Video::GetAudioDeviceID() {
+    return m_audioDevideID;
+}

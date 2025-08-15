@@ -2,19 +2,8 @@
 #include <concepts>
 #include <deque>
 #include <SDL3/SDL.h>
+#include <video/Deleters.hpp>
 
-
-struct SDL_MutexDeleter {
-    void operator()(SDL_Mutex* ptr) {
-        SDL_DestroyMutex(ptr);
-    }
-};
-
-struct SDL_ConditionDeleter {
-    void operator()(SDL_Condition* ptr) {
-        SDL_DestroyCondition(ptr);
-    }
-};
 
 template <typename T>
 concept HasPts = requires(T t) {

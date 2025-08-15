@@ -45,3 +45,15 @@ struct SDL_TextureDeleter {
         SDL_DestroyTexture(ptr);
     }
 };
+
+struct SDL_MutexDeleter {
+    void operator()(SDL_Mutex* ptr) {
+        SDL_DestroyMutex(ptr);
+    }
+};
+
+struct SDL_ConditionDeleter {
+    void operator()(SDL_Condition* ptr) {
+        SDL_DestroyCondition(ptr);
+    }
+};

@@ -1,24 +1,16 @@
 #pragma once
-#include <video/Video.hpp>
-#include <video/AudioData.hpp>
+#include <stream/AudioStream.hpp>
 
-int AudioConsumerThread(void* userdata);
+class AudioStream;
 
 class AudioConsumer {
-    AudioData& audioData;
+    static SDL_AudioSpec GetSourceAudioFormat(AudioStream* audioStream);
+    static SDL_AudioSpec GetOutputAudioFormat(AudioStream* audioStream);
+    static double GetSecondsRemainingOnStream(AudioStream* audioStream);
+    static double GetSecondsRemaining(AudioStream* audioStream);
+    static double CalculateDiff(AudioStream* audioStream, int64_t pts);
 
 public:
-    AudioConsumer();
-    AudioConsumer(AudioData* audioData);
-    ~AudioConsumer();
+    static int AudioConsumerThread(void* userdata);
 
-
-
-    SDL_AudioSpec GetSourceAudioFormat();
-    SDL_AudioSpec GetOutputAudioFormat();
-    double GetSecondsRemainingOnStream();
-    double GetSecondsRemaining();
-    double CalculateDiff(int64_t pts);
-
-    int Run();
 };

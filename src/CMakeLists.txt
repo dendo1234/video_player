@@ -1,8 +1,11 @@
 set(PROJECT_SOURCES
     basic/Clock.cpp
     basic/Player.cpp
+    stream/AudioStream.cpp
+    stream/Stream.cpp
+    stream/VideoStream.cpp
     video/AudioConsumer.cpp
-    video/Decoders.cpp
+    video/MediaFile.cpp
     video/Video.cpp
     main.cpp
 )
