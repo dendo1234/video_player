@@ -14,16 +14,32 @@ int Video::PacketReaderThread(void* userdata) {
     Video* video = (Video*)userdata;
     AVPacket* packet;
 
-    while (packet = av_packet_alloc(), av_read_frame(video->mediaFile.GetFormatContext(), packet) == 0 && !video->m_videoDone) {
-        if (packet->stream_index == video->videoStream.GetStreamIndex()) {
-            video->videoStream.PushPacket(packet);
-            continue;
-        }
-        for (auto& audioStream : video->audioStreams) {
-            if (packet->stream_index == audioStream.GetStreamIndex()) {
-                audioStream.PushPacket(packet);
-                break;
+    while (!video->m_videoDone) {
+        packet = av_packet_alloc();
+        int lastError = av_read_frame(video->mediaFile.GetFormatContext(), packet);
+
+        if (lastError == 0) {
+            if (packet->stream_index == video->videoStream.GetStreamIndex()) {
+                video->videoStream.PushPacket(packet);
+                continue;
             }
+            bool found = false;
+            for (auto& audioStream : video->audioStreams) {
+                if (packet->stream_index == audioStream.GetStreamIndex()) {
+                    audioStream.PushPacket(packet);
+                    found = true;
+                    break;
+                }
+            }
+            // Packet is in a stream that is not loaded
+            if (found == false) {
+                av_packet_free(&packet);
+            }
+            continue;
+        } else {
+            SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Packet Reader error or EOF");
+            av_packet_free(&packet);
+            break;
         }
     }
         
@@ -33,7 +49,6 @@ int Video::PacketReaderThread(void* userdata) {
         audioStream.PushPacket(nullptr);
     }
     
-    av_packet_free(&packet);
     return 0;
 }
 
