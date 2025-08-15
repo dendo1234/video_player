@@ -120,17 +120,6 @@ Video::~Video() {
     //     audioData.packetQueue.Push(nullptr);
     //     audioData.frameQueue.Push(nullptr);
     // }
-
-    // TODO: transfer cleanup to the Deque class
-	// AVFrame* f;
-	// while ((f = m_videoData.frameQueue.Get()) != nullptr) {
-	// 	av_frame_free(&f);
-	// }
-    // for (auto& audioData : audios) {
-    //     while ((f = audioData.frameQueue.Get()) != nullptr) {
-    //         av_frame_free(&f);
-    //     }
-    // }
 }
 
 void Video::InitializeThreads() {
@@ -160,8 +149,8 @@ void Video::Update(uint64_t dt) {
     clock.UpdateDt(dt/1e9);
 
 
-    AVFrame* frame = videoStream.GetFrameBeforePts(static_cast<int64_t>(GetSyncClock() / av_q2d(videoStream.GetTimeBase())));
-    if (frame != nullptr) {
+    std::unique_ptr<AVFrame,AVFrameDeleter> frame = videoStream.GetFrameBeforePts(static_cast<int64_t>(GetSyncClock() / av_q2d(videoStream.GetTimeBase())));
+    if (frame) {
         // TODO: Implement video clock
         // m_videoData.clock = frame->pts * av_q2d(m_videoData.time_base);
         SDL_UpdateYUVTexture(
@@ -174,7 +163,6 @@ void Video::Update(uint64_t dt) {
                 frame->data[2],
                 frame->linesize[2]
             );
-		av_frame_free(&frame);
     } 
 }
 

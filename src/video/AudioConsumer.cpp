@@ -44,7 +44,7 @@ int AudioConsumer::AudioConsumerThread(void* userdata) {
     double diffWeightedSum = 0.0;
     static constexpr double factor = 0.8;
     static constexpr double diffThreshold = 0.03;
-    static constexpr double noSyncThreshold = 0.5; // 100 ms
+    static constexpr double noSyncThreshold = 10.9; // 100 ms
     static constexpr unsigned int minimalDiffCount = 10;
     static constexpr double desiredBufferSizeSeconds = 0.05;
     double diff = 0;
@@ -56,7 +56,7 @@ int AudioConsumer::AudioConsumerThread(void* userdata) {
             continue;
         }
         
-        AVFrame* frame = audioStream->frameQueue.Peak();
+        std::unique_ptr<AVFrame, AVFrameDeleter> frame = audioStream->frameQueue.Get();
         if (frame == nullptr) {
             return 0;
         }
@@ -144,8 +144,6 @@ int AudioConsumer::AudioConsumerThread(void* userdata) {
 
         // audioStream->clock = frame->pts * av_q2d(audioStream->GetTimeBase()) + GetSecondsRemaining();
         
-        audioStream->frameQueue.Pop();
-        av_frame_unref(frame);
         av_frame_unref(resultFrame);
     }
     return 0;

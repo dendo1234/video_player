@@ -14,7 +14,7 @@ Stream::Stream(Video* video, std::unique_ptr<AVCodecContext, AVCodecContextDelet
 }
 
 void Stream::PushPacket(AVPacket* pkt) {
-    packetQueue.Push(pkt);
+    packetQueue.Push(std::unique_ptr<AVPacket, AVPacketDeleter>(pkt));
 }
 
 void Stream::Flush() {
@@ -25,7 +25,7 @@ void Stream::Flush() {
 int Stream::DecoderThread(void* userdata) {
     Stream* stream = static_cast<Stream*>(userdata);
     AVFrame* decodedFrame = av_frame_alloc();
-    AVPacket* packet = nullptr;
+    std::unique_ptr<AVPacket,AVPacketDeleter> packet = nullptr;
     bool decoding = true;
 
     while (true) {
@@ -33,7 +33,7 @@ int Stream::DecoderThread(void* userdata) {
 
         if (lastError == 0) {
             // recebeu frame
-            stream->frameQueue.Push(decodedFrame);
+            stream->frameQueue.Push(std::unique_ptr<AVFrame,AVFrameDeleter>(decodedFrame));
             decodedFrame = av_frame_alloc();
             continue;
         }
@@ -53,24 +53,24 @@ int Stream::DecoderThread(void* userdata) {
 
         if (decoding) {
             // precisa de mais packets
-            packet = stream->packetQueue.Get();
+            packet = std::move(stream->packetQueue.Get());
 
             if (packet == nullptr) {
                 decoding = false;
             }
 
-            lastError = avcodec_send_packet(stream->context.get(), packet);
+            lastError = avcodec_send_packet(stream->context.get(), packet.get());
             if (lastError == 0) {
                 // packet recebida com sucesso
-                if (packet != nullptr) {
-                    av_packet_unref(packet);
-                }
+                // if (packet != nullptr) {
+                //     av_packet_unref(packet);
+                // }
                 continue;
             }
 
             else if (lastError == AVERROR(EAGAIN)) {
                 // precisa ler mais frames
-                stream->packetQueue.PushFront(packet);
+                stream->packetQueue.PushFront(std::move(packet));
                 continue;
             }
 
@@ -96,8 +96,8 @@ int Stream::DecoderThread(void* userdata) {
 
     stream->frameQueue.Push(nullptr);
 
-    if (packet != nullptr) {
-        av_packet_free(&packet);
-    }
+    // if (packet != nullptr) {
+    //     av_packet_free(&packet);
+    // }
     return 0;
 }

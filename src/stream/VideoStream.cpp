@@ -29,6 +29,6 @@ void VideoStream::Flush() {
 
 }
 
-AVFrame* VideoStream::GetFrameBeforePts(int64_t pts) {
+std::unique_ptr<AVFrame,AVFrameDeleter> VideoStream::GetFrameBeforePts(int64_t pts) {
     return frameQueue.GetBeforePts(pts);
 }

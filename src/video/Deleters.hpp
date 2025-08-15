@@ -40,6 +40,12 @@ struct AVPacketDeleter {
     }
 };
 
+struct AVFrameDeleter {
+    void operator()(AVFrame* ptr) {
+        av_frame_free(&ptr);
+    }
+};
+
 struct SDL_TextureDeleter {
     void operator()(SDL_Texture* ptr) {
         SDL_DestroyTexture(ptr);

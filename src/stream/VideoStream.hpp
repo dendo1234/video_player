@@ -25,7 +25,7 @@ public:
     inline int GetHeight();
 
     void Flush() override;
-    AVFrame* GetFrameBeforePts(int64_t);
+    std::unique_ptr<AVFrame,AVFrameDeleter> GetFrameBeforePts(int64_t);
 };
 
 inline int VideoStream::GetWidth() {
