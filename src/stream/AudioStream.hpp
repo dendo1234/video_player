@@ -1,6 +1,5 @@
 #pragma once
 #include <stream/Stream.hpp>
-#include <video/AudioConsumer.hpp>
 
 class AudioStream : public Stream {
 private:
@@ -16,10 +15,17 @@ private:
 
     void CreateThreads() override;
 
-    friend class AudioConsumer;
+    // Audio consumer stuff
+    SDL_AudioSpec GetSourceAudioFormat();
+    SDL_AudioSpec GetOutputAudioFormat();
+    double GetSecondsRemainingOnStream();
+    double GetSecondsRemaining();
+    double CalculateDiff(int64_t pts);
+
+    int AudioConsumerThread();
+    static int AudioConsumerThreadWrapper(void* userdata);
 public:
     AudioStream(Video* video, std::unique_ptr<AVCodecContext, AVCodecContextDeleter> context, int streamIndex, AVRational timeBase);
 
     void Flush() override;
 };
-

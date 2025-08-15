@@ -4,7 +4,6 @@ set(PROJECT_SOURCES
     stream/AudioStream.cpp
     stream/Stream.cpp
     stream/VideoStream.cpp
-    video/AudioConsumer.cpp
     video/Deque.cpp
     video/MediaFile.cpp
     video/Video.cpp
