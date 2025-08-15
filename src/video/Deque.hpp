@@ -16,8 +16,7 @@ class Deque {
 private:
     std::deque<T> deque;
     std::unique_ptr<SDL_Mutex, SDL_MutexDeleter> mutex{SDL_CreateMutex()};
-    std::unique_ptr<SDL_Condition, SDL_ConditionDeleter> readCond{SDL_CreateCondition()};
-    std::unique_ptr<SDL_Condition, SDL_ConditionDeleter> writeCond{SDL_CreateCondition()};
+    std::unique_ptr<SDL_Condition, SDL_ConditionDeleter> cond{SDL_CreateCondition()};
     bool flushed{false};
 public:
     Deque();
@@ -25,8 +24,6 @@ public:
     void Push(T data);
     void PushFront(T data);
     T Get();
-    // Does not delete the element
-    T Peak();
     void Pop();
     size_t Size();
     T GetBeforePts(int64_t pts);
