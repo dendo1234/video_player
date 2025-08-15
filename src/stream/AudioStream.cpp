@@ -1,6 +1,7 @@
 #include <stream/AudioStream.hpp>
 #include <video/Video.hpp>
 
+using namespace std;
 
 AudioStream::AudioStream(Video* video, std::unique_ptr<AVCodecContext, AVCodecContextDeleter> context, int streamIndex, AVRational timeBase) 
     : Stream{video, std::move(context), streamIndex, timeBase} {

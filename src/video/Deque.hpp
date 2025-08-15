@@ -32,7 +32,6 @@ public:
     T* BlockingGetBeforePts(int64_t pts);
 };
 
-using namespace std;
 
 template<HasPts T>
 Deque<T>::Deque() {

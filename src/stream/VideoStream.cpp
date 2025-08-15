@@ -1,5 +1,7 @@
 #include <stream/VideoStream.hpp>
 
+using namespace std;
+
 VideoStream::VideoStream(Video* video, std::unique_ptr<AVCodecContext, AVCodecContextDeleter> context, int streamIndex, AVRational timeBase) 
     : Stream{video, std::move(context), streamIndex, timeBase} {
     InitializeSwsContext();

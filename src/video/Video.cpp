@@ -8,6 +8,8 @@ extern "C" {
 #include "libswresample/swresample.h"
 }
 
+using namespace std;
+
 int Video::PacketReaderThread(void* userdata) {
     Video* video = (Video*)userdata;
     AVPacket* packet;

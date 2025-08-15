@@ -39,7 +39,7 @@ private:
 
     Clock clock;
 
-    unique_ptr<AVCodecContext, AVCodecContextDeleter> InitializeDecoder(int streamIndex);
+    std::unique_ptr<AVCodecContext, AVCodecContextDeleter> InitializeDecoder(int streamIndex);
     VideoStream InitializeVideoStream();
     std::vector<AudioStream> InitializeAudioStreams();
     void InitializeThreads();
