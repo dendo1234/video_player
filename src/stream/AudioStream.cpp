@@ -200,7 +200,7 @@ int AudioStream::AudioConsumerThread() {
         }
         
         if (SDL_GetAudioStreamQueued(sdlAudioStream.get()) < 200) {
-            SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Low amount of bytes on audio stream, queued: %d, available: %d", SDL_GetAudioStreamQueued(sdlAudioStream.get()), SDL_GetAudioStreamAvailable(sdlAudioStream.get()));
+            SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Low amount of bytes on audio stream %d, queued: %d, available: %d", streamIndex, SDL_GetAudioStreamQueued(sdlAudioStream.get()), SDL_GetAudioStreamAvailable(sdlAudioStream.get()));
         }
 
         // TODO: Remove this magic number
