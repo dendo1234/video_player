@@ -1,6 +1,7 @@
 #define SDL_MAIN_USE_CALLBACKS
 #include <SDL3/SDL_main.h>
 #include "basic/Player.hpp"
+#include <imgui.h>
 
 SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]] int argc, [[maybe_unused]] char **argv) {
     Player* player = new Player("video player");
@@ -14,6 +15,8 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 
     static const uint64_t FRAME_TIME = 16666667;
     uint64_t frameStart = SDL_GetTicksNS();
+
+    IMGUI_CHECKVERSION();
 
     uint64_t dt = player->DeltaTime();
 
