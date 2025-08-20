@@ -16,13 +16,8 @@ Deque<T, MaxSize>::Deque() {
 template<HasPts T, int MaxSize>
 void Deque<T, MaxSize>::Push(T packet) {
     SDL_LockMutex(mutex.get());
-    if (packet == nullptr) {
-        flushed = true;
-        SDL_SignalCondition(cond.get());
-    } else {
-        while (deque.size() > MaxSize && !flushed) {
-            SDL_WaitCondition(cond.get(), mutex.get());
-        }
+    while (deque.size() > MaxSize && !flushed) {
+        SDL_WaitCondition(cond.get(), mutex.get());
     }
     deque.push_back(std::move(packet));
     SDL_SignalCondition(cond.get());
@@ -71,7 +66,8 @@ void Deque<T, MaxSize>::Flush() {
     deque.clear();
     // Unsure if there should be a signal here. The lack of it results in deadlocks, 
     // and the presence may have a thread stuck at the Push method
-    SDL_SignalCondition(cond.get());
+    deque.push_back(nullptr);
+    SDL_BroadcastCondition(cond.get());
     SDL_UnlockMutex(mutex.get());
 }
 
