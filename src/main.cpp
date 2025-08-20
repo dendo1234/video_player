@@ -1,7 +1,7 @@
 #define SDL_MAIN_USE_CALLBACKS
 #include <SDL3/SDL_main.h>
 #include "basic/Player.hpp"
-#include <imgui.h>
+#include "backends/imgui_impl_sdl3.h"
 
 SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]] int argc, [[maybe_unused]] char **argv) {
     Player* player = new Player("video player");
@@ -24,6 +24,7 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 
     SDL_RenderClear(player->renderer);
     player->video->Render();
+    // player->GuiPass();
     SDL_RenderPresent(player->renderer);
 
     uint64_t frameTime = SDL_GetTicksNS() - frameStart;
@@ -36,10 +37,11 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
     Player* player = static_cast<Player*>(appstate);
 
+    ImGui_ImplSDL3_ProcessEvent(event);
     switch (event->type) {
     case SDL_EVENT_QUIT:
         return SDL_APP_SUCCESS;
-    case SDL_EVENT_KEY_DOWN:
+    // case SDL_EVENT_KEY_DOWN:
         player->video->Seek(30.0);
 
         break;
