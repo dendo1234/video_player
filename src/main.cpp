@@ -30,11 +30,16 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     return SDL_APP_CONTINUE;
 };
 
-SDL_AppResult SDL_AppEvent([[maybe_unused]] void *appstate, SDL_Event *event) {
+SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
+    Player* player = static_cast<Player*>(appstate);
 
     switch (event->type) {
     case SDL_EVENT_QUIT:
         return SDL_APP_SUCCESS;
+    case SDL_EVENT_KEY_DOWN:
+        player->video->Seek(30.0);
+
+        break;
     default:
         break;
     }

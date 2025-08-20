@@ -20,6 +20,8 @@ void Stream::PushPacket(AVPacket* pkt) {
 void Stream::Flush() {
     packetQueue.Push(nullptr);
     frameQueue.Push(nullptr);
+    packetQueue.Flush();
+    frameQueue.Flush();
 }
 
 int Stream::DecoderThread(void* userdata) {

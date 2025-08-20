@@ -49,3 +49,13 @@ void MediaFile::FindStreams() {
         }
     }
 }
+
+void MediaFile::Seek(double timestamp, int flags) {
+
+    int lastError = av_seek_frame(context.get(), -1, static_cast<int64_t>(timestamp*AV_TIME_BASE), flags);
+    if(lastError < 0) {
+        char buffer[AV_ERROR_MAX_STRING_SIZE];
+        av_make_error_string(buffer, AV_ERROR_MAX_STRING_SIZE, lastError);
+        SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Error seeking frame: %s", buffer);
+    }
+}

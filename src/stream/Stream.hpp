@@ -16,8 +16,8 @@ class Stream {
 protected:
     Video* video;
     std::unique_ptr<AVCodecContext, AVCodecContextDeleter> context;
-    Deque<std::unique_ptr<AVPacket, AVPacketDeleter>> packetQueue;
-    Deque<std::unique_ptr<AVFrame, AVFrameDeleter>> frameQueue;
+    Deque<std::unique_ptr<AVPacket, AVPacketDeleter>, 2> packetQueue;
+    Deque<std::unique_ptr<AVFrame, AVFrameDeleter>, 2> frameQueue;
     int streamIndex{-1};
     AVRational timeBase;
 

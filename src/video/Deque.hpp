@@ -11,7 +11,7 @@ concept HasPts = requires(T t) {
     t->pts;
 };
 
-template<HasPts T>
+template<HasPts T, int MaxSize>
 class Deque {
 private:
     std::deque<T> deque;

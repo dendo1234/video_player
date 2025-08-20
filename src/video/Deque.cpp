@@ -6,21 +6,21 @@ extern "C" {
 }
 
 
-template<HasPts T>
-Deque<T>::Deque() {
+template<HasPts T, int MaxSize>
+Deque<T, MaxSize>::Deque() {
     if (!mutex || !cond) {
         SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Error creating deque's locks or conditions: %s", SDL_GetError());
     }
 }
 
-template<HasPts T>
-void Deque<T>::Push(T packet) {
+template<HasPts T, int MaxSize>
+void Deque<T, MaxSize>::Push(T packet) {
     SDL_LockMutex(mutex.get());
     if (packet == nullptr) {
         flushed = true;
         SDL_SignalCondition(cond.get());
     } else {
-        while (deque.size() > 200 && !flushed) {
+        while (deque.size() > MaxSize && !flushed) {
             SDL_WaitCondition(cond.get(), mutex.get());
         }
     }
@@ -29,16 +29,16 @@ void Deque<T>::Push(T packet) {
     SDL_UnlockMutex(mutex.get());
 }
 
-template<HasPts T>
-void Deque<T>::PushFront(T packet) {
+template<HasPts T, int MaxSize>
+void Deque<T, MaxSize>::PushFront(T packet) {
     SDL_LockMutex(mutex.get());
     deque.push_front(std::move(packet));
     SDL_SignalCondition(cond.get());
     SDL_UnlockMutex(mutex.get());
 }
 
-template<HasPts T>
-T Deque<T>::Get() {
+template<HasPts T, int MaxSize>
+T Deque<T, MaxSize>::Get() {
     SDL_LockMutex(mutex.get());
     while (deque.size() == 0) {
         SDL_WaitCondition(cond.get(),mutex.get());
@@ -52,8 +52,8 @@ T Deque<T>::Get() {
     return ptr;
 }
 
-template<HasPts T>
-void Deque<T>::Pop() {
+template<HasPts T, int MaxSize>
+void Deque<T, MaxSize>::Pop() {
     SDL_LockMutex(mutex.get());
     while (deque.size() == 0) {
         SDL_WaitCondition(cond.get(),mutex.get());
@@ -65,8 +65,8 @@ void Deque<T>::Pop() {
     
 }
 
-template<HasPts T>
-void Deque<T>::Flush() {
+template<HasPts T, int MaxSize>
+void Deque<T, MaxSize>::Flush() {
     SDL_LockMutex(mutex.get());
     deque.clear();
     // Unsure if there should be a signal here. The lack of it results in deadlocks, 
@@ -75,13 +75,13 @@ void Deque<T>::Flush() {
     SDL_UnlockMutex(mutex.get());
 }
 
-template<HasPts T>
-size_t Deque<T>::Size() {
+template<HasPts T, int MaxSize>
+size_t Deque<T, MaxSize>::Size() {
     return deque.size();
 }
 
-template <HasPts T>
-T Deque<T>::GetBeforePts(int64_t pts) {
+template <HasPts T, int MaxSize>
+T Deque<T, MaxSize>::GetBeforePts(int64_t pts) {
     SDL_LockMutex(mutex.get());
     if (deque.size() == 0) {
         SDL_WaitCondition(cond.get(),mutex.get());
@@ -110,8 +110,8 @@ T Deque<T>::GetBeforePts(int64_t pts) {
     return oldPtr;
 }
 
-template <HasPts T>
-T Deque<T>::BlockingGetBeforePts(int64_t pts) {
+template <HasPts T, int MaxSize>
+T Deque<T, MaxSize>::BlockingGetBeforePts(int64_t pts) {
     SDL_LockMutex(mutex.get());
     if (deque.size() == 0) {
         SDL_WaitCondition(cond.get(),mutex.get());
@@ -140,5 +140,6 @@ T Deque<T>::BlockingGetBeforePts(int64_t pts) {
     return ptr;
 }
 
-template class Deque<std::unique_ptr<AVFrame,AVFrameDeleter>>;
-template class Deque<std::unique_ptr<AVPacket,AVPacketDeleter>>;
+template class Deque<std::unique_ptr<AVFrame,AVFrameDeleter>, 2>;
+template class Deque<std::unique_ptr<AVFrame,AVFrameDeleter>, 10>;
+template class Deque<std::unique_ptr<AVPacket,AVPacketDeleter>, 2>;

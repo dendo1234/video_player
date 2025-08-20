@@ -110,7 +110,7 @@ int AudioStream::AudioConsumerThread() {
     double diffWeightedSum = 0.0;
     static constexpr double factor = 0.8;
     static constexpr double diffThreshold = 0.03;
-    static constexpr double noSyncThreshold = 10.9; // 100 ms
+    static constexpr double noSyncThreshold = 0.1; // 100 ms
     static constexpr unsigned int minimalDiffCount = 10;
     static constexpr double desiredBufferSizeSeconds = 0.05;
     double diff = 0;
@@ -150,17 +150,17 @@ int AudioStream::AudioConsumerThread() {
 
                     diffCount = 0;
                     diffWeightedSum = 0;
-                    if (!SDL_ClearAudioStream(sdlAudioStream.get())) {
-                        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't clear audio stream: %s", SDL_GetError());
-                    }
+                    // if (!SDL_ClearAudioStream(sdlAudioStream.get())) {
+                    //     SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't clear audio stream: %s", SDL_GetError());
+                    // }
 
-                    // clear the swr buffer
-                    int numberOfSamples  = swr_convert(swrContext.get(),nullptr,0,nullptr,0);
-                    if (numberOfSamples < 0) {
-                        char buffer[AV_ERROR_MAX_STRING_SIZE];
-                        av_make_error_string(buffer, AV_ERROR_MAX_STRING_SIZE, numberOfSamples);
-                        SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Error swr convert: %s", buffer);
-                    }
+                    // // clear the swr buffer
+                    // int numberOfSamples  = swr_convert(swrContext.get(),nullptr,0,nullptr,0);
+                    // if (numberOfSamples < 0) {
+                    //     char buffer[AV_ERROR_MAX_STRING_SIZE];
+                    //     av_make_error_string(buffer, AV_ERROR_MAX_STRING_SIZE, numberOfSamples);
+                    //     SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Error swr convert: %s", buffer);
+                    // }
                     
                     // TODO: investigate when seeking is done
                     // frame = frameQueue.BlockingGetBeforePts(static_cast<int64_t>(video->GetSyncClock() / av_q2d(time_base)));

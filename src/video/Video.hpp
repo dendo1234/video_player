@@ -58,6 +58,7 @@ public:
 
     double GetSyncClock();
     SDL_AudioDeviceID GetAudioDeviceID();
+    void Seek(double timestamp);
 
     void Render() const;
     void Update(uint64_t dt);
@@ -68,7 +69,7 @@ public:
 };
 
 
-bool inline Video::Is(const std::string& type) const {
+inline bool Video::Is(const std::string& type) const {
     return type == "Video";
 }
 

@@ -37,11 +37,15 @@ int Video::PacketReaderThread(void* userdata) {
             }
             continue;
         } else {
+            char buffer[AV_ERROR_MAX_STRING_SIZE];
+            av_make_error_string(buffer, AV_ERROR_MAX_STRING_SIZE, lastError);
+            SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Error codec: %s", buffer);
             SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Packet Reader error or EOF");
             av_packet_free(&packet);
             break;
         }
     }
+    SDL_Log("????????????");
         
     // Leitura de packetes finalizada
     video->videoStream.PushPacket(nullptr);
@@ -154,6 +158,13 @@ void Video::Start() {
 
 double Video::GetSyncClock() {
     return clock.GetTime();
+}
+
+void Video::Seek(double timestamp) {
+    int flags = timestamp > clock.GetTime() ? 0 : AVSEEK_FLAG_BACKWARD;
+    mediaFile.Seek(timestamp, flags);
+    FlushStreams();
+    clock.UpdateTime(timestamp);
 }
 
 void Video::Update(uint64_t dt) {

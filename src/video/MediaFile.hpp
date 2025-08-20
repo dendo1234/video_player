@@ -30,6 +30,8 @@ public:
     const AVCodecParameters* GetCodecParameters(int streamIndex) const;
     AVRational GetTimeBase(int streamIndex) const;
 
+    void Seek(double timestamp, int flags);
+
 };
 
 inline int MediaFile::GetVideoStreamIndex() const {
