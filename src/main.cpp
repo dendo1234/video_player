@@ -4,7 +4,11 @@
 #include "backends/imgui_impl_sdl3.h"
 
 SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]] int argc, [[maybe_unused]] char **argv) {
-    Player* player = new Player("video player");
+    SDL_SetHint(SDL_HINT_LOGGING, "verbose");
+    SDL_SetLogPriorities(SDL_LOG_PRIORITY_VERBOSE);
+    SDL_Init(SDL_INIT_AUDIO);
+
+    Player* player = new Player();
     *appstate = player;
 
     return SDL_APP_CONTINUE;
@@ -16,16 +20,14 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     static const uint64_t FRAME_TIME = 16666667;
     uint64_t frameStart = SDL_GetTicksNS();
 
-    IMGUI_CHECKVERSION();
-
     uint64_t dt = player->DeltaTime();
 
-    player->video->Update(dt);
+    player->video.Update(dt);
 
-    SDL_RenderClear(player->renderer);
-    player->video->Render();
-    // player->GuiPass();
-    SDL_RenderPresent(player->renderer);
+    SDL_RenderClear(player->renderer.get());
+    player->video.Render();
+    player->GuiPass();
+    SDL_RenderPresent(player->renderer.get());
 
     uint64_t frameTime = SDL_GetTicksNS() - frameStart;
     if (frameTime < FRAME_TIME) {
@@ -41,9 +43,8 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
     switch (event->type) {
     case SDL_EVENT_QUIT:
         return SDL_APP_SUCCESS;
-    // case SDL_EVENT_KEY_DOWN:
-        player->video->Seek(30.0);
-
+    case SDL_EVENT_KEY_DOWN:
+        player->video.Seek(30.0);
         break;
     default:
         break;

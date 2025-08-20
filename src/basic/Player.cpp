@@ -5,80 +5,26 @@
 #include <backends/imgui_impl_sdl3.h>
 #include <backends/imgui_impl_sdlrenderer3.h>
 
-using namespace std;
 
-Player::Player(const string_view& name) 
-    : io{InitImGuiContext()} {
-    SDL_SetHint(SDL_HINT_LOGGING, "verbose");
-    SDL_SetLogPriorities(SDL_LOG_PRIORITY_VERBOSE);
-    SDL_Init(SDL_INIT_AUDIO);
+std::unique_ptr<SDL_Window, decltype(SDL_WindowDeleter)> Player::CreateWindow() {
+    SDL_Window* window = SDL_CreateWindow("video player", 640, 360, SDL_WINDOW_RESIZABLE);
+    return std::unique_ptr<SDL_Window, decltype(SDL_WindowDeleter)>(window);
+}
 
-    window = SDL_CreateWindow(name.data(), 640, 360, SDL_WINDOW_RESIZABLE);
-    renderer = SDL_CreateRenderer(window, nullptr);
+std::unique_ptr<SDL_Renderer, decltype(SDL_RendererDeleter)> Player::CreateRenderer() {
+    SDL_Renderer* renderer = SDL_CreateRenderer(window.get(), nullptr);
+    return std::unique_ptr<SDL_Renderer, decltype(SDL_RendererDeleter)>(renderer);
+}
 
-
+Player::Player() {
     // SDL_SetRenderLogicalPresentation(renderer, 640, 360, SDL_LOGICAL_PRESENTATION_LETTERBOX);
 
     main_scale = SDL_GetDisplayContentScale(SDL_GetPrimaryDisplay());
-    InitImGui();
 
-    video = new Video("input3.mkv", renderer);
 
     DeltaTime();
-
- 
 }
 
-Player::~Player() {
-    delete video;
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
-}
-
-ImGuiIO& Player::InitImGuiContext() {
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // Enable Docking
-
-    return io;
-}
-
-void Player::InitImGui() {
-    // Setup Dear ImGui style
-    ImGui::StyleColorsDark();
-    //ImGui::StyleColorsLight();
-
-    // Setup scaling
-    ImGuiStyle& style = ImGui::GetStyle();
-    style.ScaleAllSizes(main_scale);        // Bake a fixed style scale. (until we have a solution for dynamic style scaling, changing this requires resetting Style + calling this again)
-    style.FontScaleDpi = main_scale;        // Set initial font scale. (using io.ConfigDpiScaleFonts=true makes this unnecessary. We leave both here for documentation purpose)
-    //io.ConfigDpiScaleFonts = true;        // [Experimental] Automatically overwrite style.FontScaleDpi in Begin() when Monitor DPI changes. This will scale fonts but _NOT_ scale sizes/padding for now.
-    //io.ConfigDpiScaleViewports = true;    // [Experimental] Scale Dear ImGui and Platform Windows when Monitor DPI changes.
-
-    // Setup Platform/Renderer backends
-    ImGui_ImplSDL3_InitForSDLRenderer(window, renderer);
-    ImGui_ImplSDLRenderer3_Init(renderer);
-
-    // Load Fonts
-    // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
-    // - AddFontFromFileTTF() will return the ImFont* so you can store it if you need to select the font among multiple.
-    // - If the file cannot be loaded, the function will return a nullptr. Please handle those errors in your application (e.g. use an assertion, or display an error and quit).
-    // - Use '#define IMGUI_ENABLE_FREETYPE' in your imconfig file to use Freetype for higher quality font rendering.
-    // - Read 'docs/FONTS.md' for more instructions and details.
-    // - Remember that in C/C++ if you want to include a backslash \ in a string literal you need to write a double backslash \\ !
-    // - Our Emscripten build process allows embedding fonts to be accessible at runtime from the "fonts/" folder. See Makefile.emscripten for details.
-    //style.FontSizeBase = 20.0f;
-    //io.Fonts->AddFontDefault();
-    //io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segoeui.ttf");
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf");
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf");
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf");
-    //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf");
-    //IM_ASSERT(font != nullptr);
-}
 
 void Player::GuiPass() {
     // Start the Dear ImGui frame
@@ -109,7 +55,7 @@ void Player::GuiPass() {
         ImGui::SameLine();
         ImGui::Text("counter = %d", counter);
 
-        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / guiHandler.io.Framerate, guiHandler.io.Framerate);
         ImGui::End();
     }
 
@@ -124,7 +70,7 @@ void Player::GuiPass() {
     }
 
     ImGui::Render();
-    ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(), renderer);
+    ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(), renderer.get());
 }
 
 uint64_t Player::DeltaTime() {
