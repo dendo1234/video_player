@@ -45,13 +45,6 @@ int Video::PacketReaderThread(void* userdata) {
             break;
         }
     }
-    SDL_Log("????????????");
-        
-    // Leitura de packetes finalizada
-    video->videoStream.PushPacket(nullptr);
-    for (auto& audioStream : video->audioStreams) {
-        audioStream.PushPacket(nullptr);
-    }
     
     return 0;
 }
@@ -123,22 +116,8 @@ Video::Video(const char* filename, SDL_Renderer* renderer)
 // TODO: make more organized destructor
 Video::~Video() {
     m_videoDone = true;
-    videoStream.Flush();
-
-    for (auto& audioStream : audioStreams) {
-        audioStream.Flush();
-    }
-    
 
     SDL_CloseAudioDevice(m_audioDevideID);
-    
-    // TODO: Verify if this is necessary
-    // I supose not but we will see
-    // m_videoData.frameQueue.Push(nullptr);
-    // for (auto& audioData : audios) {
-    //     audioData.packetQueue.Push(nullptr);
-    //     audioData.frameQueue.Push(nullptr);
-    // }
 }
 
 void Video::InitializeThreads() {
