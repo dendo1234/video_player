@@ -79,7 +79,7 @@ size_t Deque<T, MaxSize>::Size() {
 template <HasPts T, int MaxSize>
 T Deque<T, MaxSize>::GetBeforePts(int64_t pts) {
     SDL_LockMutex(mutex.get());
-    if (deque.size() == 0) {
+    while (deque.size() == 0) {
         SDL_WaitCondition(cond.get(),mutex.get());
     }
     T oldPtr = nullptr;
