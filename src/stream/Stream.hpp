@@ -39,6 +39,7 @@ public:
 
     void PushPacket(AVPacket* pkt);
     virtual void Flush();
+    virtual void GuiPass();
 };
 
 int Stream::GetStreamIndex() {

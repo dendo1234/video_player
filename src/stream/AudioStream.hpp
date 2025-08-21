@@ -10,6 +10,9 @@ private:
     std::unique_ptr<SDL_AudioStream, SDL_AudioStreamDeleter> sdlAudioStream;
     std::unique_ptr<SDL_Thread, SDL_ThreadDeleter> audioConsumer;
 
+    double diff{0};
+    uint32_t diffCount{0};
+
     void InitializeSwrContext();
     void InitializeSDLStream();
 
@@ -28,4 +31,5 @@ public:
     AudioStream(Video* video, std::unique_ptr<AVCodecContext, AVCodecContextDeleter> context, int streamIndex, AVRational timeBase);
 
     void Flush() override;
+    void GuiPass() override;
 };

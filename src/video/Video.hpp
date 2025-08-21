@@ -63,6 +63,7 @@ public:
     void Render() const;
     void Update(uint64_t dt);
     void Start();
+    void GuiPass();
 
     bool Is(const std::string& type) const;
 

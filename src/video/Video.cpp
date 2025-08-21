@@ -167,6 +167,13 @@ void Video::Seek(double timestamp) {
     clock.UpdateTime(timestamp);
 }
 
+void Video::GuiPass() {
+    videoStream.GuiPass();
+    for (auto &&stream : audioStreams) {
+        stream.GuiPass();
+    }
+}
+
 void Video::Update(uint64_t dt) {
     if (m_videoDone == true) {
         return;

@@ -22,6 +22,10 @@ void Stream::Flush() {
     frameQueue.Flush();
 }
 
+void Stream::GuiPass() {
+
+}
+
 int Stream::DecoderThread(void* userdata) {
     Stream* stream = static_cast<Stream*>(userdata);
     AVFrame* decodedFrame = av_frame_alloc();

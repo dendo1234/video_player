@@ -1,6 +1,7 @@
 #include <stream/AudioStream.hpp>
 #include <video/Video.hpp>
 #include <format>
+#include "imgui.h"
 
 using namespace std;
 
@@ -70,6 +71,10 @@ void AudioStream::Flush() {
     }
 }
 
+void AudioStream::GuiPass() {
+    ImGui::Text("AudioStream %d diff: %f", streamIndex, diff);
+}
+
 SDL_AudioSpec AudioStream::GetSourceAudioFormat() {
     SDL_AudioSpec audioFormat;
     SDL_GetAudioStreamFormat(sdlAudioStream.get(), &audioFormat, nullptr);
@@ -106,14 +111,12 @@ double AudioStream::CalculateDiff(int64_t pts) {
 }
 
 int AudioStream::AudioConsumerThread() {
-    unsigned int diffCount = 0;
     double diffWeightedSum = 0.0;
     static constexpr double factor = 0.8;
     static constexpr double diffThreshold = 0.03;
     static constexpr double noSyncThreshold = 0.1; // 100 ms
     static constexpr unsigned int minimalDiffCount = 10;
     static constexpr double desiredBufferSizeSeconds = 0.05;
-    double diff = 0;
 
 
     while (!video->m_videoDone) {
