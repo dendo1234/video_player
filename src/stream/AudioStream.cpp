@@ -210,7 +210,7 @@ int AudioStream::AudioConsumerThread() {
 
         // clock = frame->pts * av_q2d(GetTimeBase()) + GetSecondsRemaining();
         
-        av_frame_unref(resultFrame);
+        av_frame_free(&resultFrame);
     }
     return 0;
 }
