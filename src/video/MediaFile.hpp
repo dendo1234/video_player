@@ -15,7 +15,6 @@ private:
     int videoStreamIndex{-1};
     std::vector<int> audioStreamIndices;
 
-    SDL_Thread* packetReader;
 
     void OpenFile(const char* filename);
     void FindStreams();

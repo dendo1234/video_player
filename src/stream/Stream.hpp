@@ -28,6 +28,11 @@ protected:
 public:
     Stream();
     Stream(Video* video, std::unique_ptr<AVCodecContext, AVCodecContextDeleter> context, int streamIndex, AVRational timeBase);
+    virtual ~Stream() = default;
+    Stream(const Stream&) = delete;
+    Stream& operator=(const Stream&) = delete;
+    Stream(Stream&&) = default;
+    Stream& operator=(Stream&&) = default;
 
     inline int GetStreamIndex();
     inline AVRational GetTimeBase();

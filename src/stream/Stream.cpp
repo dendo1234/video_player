@@ -51,7 +51,7 @@ int Stream::DecoderThread(void* userdata) {
         }
 
         // precisa de mais packets
-        packet = std::move(stream->packetQueue.Get());
+        packet = stream->packetQueue.Get();
 
         if (packet == nullptr) {
             // Flush
