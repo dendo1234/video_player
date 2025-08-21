@@ -79,31 +79,32 @@ size_t Deque<T, MaxSize>::Size() {
 template <HasPts T, int MaxSize>
 T Deque<T, MaxSize>::GetBeforePts(int64_t pts) {
     SDL_LockMutex(mutex.get());
-    while (deque.size() == 0) {
-        SDL_WaitCondition(cond.get(),mutex.get());
-    }
-    T oldPtr = nullptr;
-    T ptr = std::move(deque.front());
-
-    if (ptr == nullptr) {
-        return nullptr;
+    while (deque.empty()) {
+        SDL_WaitCondition(cond.get(), mutex.get());
     }
 
-    while (ptr->pts < pts && deque.size() > 1) {
-        oldPtr = std::move(ptr);
-        deque.pop_front();
-        ptr = std::move(deque.front());
-        if (ptr == nullptr) {
+    T lastRemoved = nullptr;
+
+    while (!deque.empty()) {
+        T &frontRef = deque.front();
+        if (frontRef == nullptr) {
+            deque.pop_front();
+            SDL_SignalCondition(cond.get());
+            SDL_UnlockMutex(mutex.get());
             return nullptr;
         }
-    } 
-
-    deque.pop_front();
-    PushFront(std::move(ptr));
+        if (frontRef->pts < pts) {
+            lastRemoved = std::move(frontRef);
+            deque.pop_front();
+            continue;
+        } else {
+            break;
+        }
+    }
 
     SDL_SignalCondition(cond.get());
     SDL_UnlockMutex(mutex.get());
-    return oldPtr;
+    return lastRemoved;
 }
 
 template <HasPts T, int MaxSize>
