@@ -72,6 +72,14 @@ void Deque<T, MaxSize>::Flush() {
 }
 
 template<HasPts T, int MaxSize>
+void Deque<T, MaxSize>::Clear() {
+    SDL_LockMutex(mutex.get());
+    deque.clear();
+    SDL_BroadcastCondition(cond.get());
+    SDL_UnlockMutex(mutex.get());
+}
+
+template<HasPts T, int MaxSize>
 size_t Deque<T, MaxSize>::Size() {
     return deque.size();
 }
@@ -141,3 +149,5 @@ T Deque<T, MaxSize>::BlockingGetBeforePts(int64_t pts) {
 template class Deque<std::unique_ptr<AVFrame,AVFrameDeleter>, 2>;
 template class Deque<std::unique_ptr<AVFrame,AVFrameDeleter>, 10>;
 template class Deque<std::unique_ptr<AVPacket,AVPacketDeleter>, 2>;
+template class Deque<std::unique_ptr<AVPacket,AVPacketDeleter>, 4>;
+template class Deque<std::unique_ptr<AVPacket,AVPacketDeleter>, 20>;

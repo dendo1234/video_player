@@ -52,6 +52,7 @@ private:
 public:
     long long int m_startTick{-0};
 
+    bool requestSeek{false};
 
     Video(const char* filename, SDL_Renderer* renderer);
     ~Video();

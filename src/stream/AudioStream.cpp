@@ -127,6 +127,7 @@ int AudioStream::AudioConsumerThread() {
         
         std::unique_ptr<AVFrame, AVFrameDeleter> frame = frameQueue.Get();
         if (frame == nullptr) {
+            continue;
             return 0;
         }
         
@@ -203,7 +204,7 @@ int AudioStream::AudioConsumerThread() {
         }
         
         if (SDL_GetAudioStreamQueued(sdlAudioStream.get()) < 200) {
-            SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Low amount of bytes on audio stream %d, queued: %d, available: %d", streamIndex, SDL_GetAudioStreamQueued(sdlAudioStream.get()), SDL_GetAudioStreamAvailable(sdlAudioStream.get()));
+            SDL_LogVerbose(SDL_LOG_CATEGORY_APPLICATION, "Low amount of bytes on audio stream %d, queued: %d, available: %d", streamIndex, SDL_GetAudioStreamQueued(sdlAudioStream.get()), SDL_GetAudioStreamAvailable(sdlAudioStream.get()));
         }
 
         // TODO: Remove this magic number

@@ -43,10 +43,9 @@ int Stream::DecoderThread(void* userdata) {
 
         else if (lastError == AVERROR_EOF) {
             // acabou os frames
-            break;
         }
 
-        if (lastError != AVERROR(EAGAIN)) {
+        if (lastError != AVERROR(EAGAIN) && lastError != AVERROR_EOF) {
             // erro qualquer
             char buffer[AV_ERROR_MAX_STRING_SIZE];
             av_make_error_string(buffer, AV_ERROR_MAX_STRING_SIZE, lastError);
@@ -60,6 +59,8 @@ int Stream::DecoderThread(void* userdata) {
         if (packet == nullptr) {
             // Flush
             avcodec_flush_buffers(stream->context.get());
+            stream->frameQueue.Clear(); // lazy way to remove remaining invalid decoded frames after flush
+            continue;
         }
 
         // Receber Packets

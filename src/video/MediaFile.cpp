@@ -51,8 +51,12 @@ void MediaFile::FindStreams() {
 }
 
 void MediaFile::Seek(double timestamp, int flags) {
+    (void)flags;
+    int64_t convertedTimestamp = static_cast<int64_t>(timestamp*AV_TIME_BASE);
+    int64_t minTs = convertedTimestamp - 0.01*AV_TIME_BASE;
+    int64_t maxTs = convertedTimestamp + 0.01*AV_TIME_BASE;
 
-    int lastError = av_seek_frame(context.get(), -1, static_cast<int64_t>(timestamp*AV_TIME_BASE), flags);
+    int lastError = avformat_seek_file(context.get(), -1, minTs, convertedTimestamp, maxTs, 0);
     if(lastError < 0) {
         char buffer[AV_ERROR_MAX_STRING_SIZE];
         av_make_error_string(buffer, AV_ERROR_MAX_STRING_SIZE, lastError);

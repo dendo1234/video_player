@@ -26,6 +26,7 @@ public:
     T Get();
     void Pop();
     void Flush();
+    void Clear();
     size_t Size();
     T GetBeforePts(int64_t pts);
     T BlockingGetBeforePts(int64_t pts);

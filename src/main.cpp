@@ -5,7 +5,7 @@
 
 SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]] int argc, [[maybe_unused]] char **argv) {
     SDL_SetHint(SDL_HINT_LOGGING, "verbose");
-    SDL_SetLogPriorities(SDL_LOG_PRIORITY_VERBOSE);
+    // SDL_SetLogPriorities(SDL_LOG_PRIORITY_VERBOSE);
     SDL_Init(SDL_INIT_AUDIO);
 
     Player* player = new Player();
@@ -31,7 +31,8 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 
     uint64_t frameTime = SDL_GetTicksNS() - frameStart;
     if (frameTime < FRAME_TIME) {
-        SDL_DelayNS(FRAME_TIME - frameTime); 
+        uint64_t waitTime = FRAME_TIME - frameTime;
+        SDL_DelayNS(waitTime); 
     }
     return SDL_APP_CONTINUE;
 };
@@ -44,7 +45,7 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
     case SDL_EVENT_QUIT:
         return SDL_APP_SUCCESS;
     case SDL_EVENT_KEY_DOWN:
-        player->video.Seek(30.0);
+        player->video.requestSeek = true;
         break;
     default:
         break;

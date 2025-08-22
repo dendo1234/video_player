@@ -8,6 +8,8 @@ extern "C" {
 #include "libswresample/swresample.h"
 }
 
+#include "imgui.h"
+
 using namespace std;
 
 int Video::PacketReaderThread(void* userdata) {
@@ -15,6 +17,11 @@ int Video::PacketReaderThread(void* userdata) {
     AVPacket* packet;
 
     while (!video->m_videoDone) {
+        if (video->requestSeek) {
+            video->Seek(0);
+            video->requestSeek = false;
+        }
+        
         packet = av_packet_alloc();
         int lastError = av_read_frame(video->mediaFile.GetFormatContext(), packet);
 
@@ -36,11 +43,15 @@ int Video::PacketReaderThread(void* userdata) {
                 av_packet_free(&packet);
             }
             continue;
+        } else if (lastError == AVERROR_EOF) {
+            char buffer[AV_ERROR_MAX_STRING_SIZE];
+            av_make_error_string(buffer, AV_ERROR_MAX_STRING_SIZE, lastError);
+            SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Packet Reader EOF: %s", buffer);
+            av_packet_free(&packet);
         } else {
             char buffer[AV_ERROR_MAX_STRING_SIZE];
             av_make_error_string(buffer, AV_ERROR_MAX_STRING_SIZE, lastError);
-            SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Error codec: %s", buffer);
-            SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Packet Reader error or EOF");
+            SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Packet Reader error: %s", buffer);
             av_packet_free(&packet);
             break;
         }
@@ -118,6 +129,7 @@ Video::~Video() {
     m_videoDone = true;
 
     SDL_CloseAudioDevice(m_audioDevideID);
+    FlushStreams();
 }
 
 void Video::InitializeThreads() {
@@ -147,6 +159,7 @@ void Video::Seek(double timestamp) {
 }
 
 void Video::GuiPass() {
+    ImGui::Text("Clock: %f", clock.GetTime());
     videoStream.GuiPass();
     for (auto &&stream : audioStreams) {
         stream.GuiPass();
