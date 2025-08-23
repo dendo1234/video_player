@@ -185,7 +185,6 @@ int AudioStream::AudioConsumerThread() {
             char buffer[AV_ERROR_MAX_STRING_SIZE];
             av_make_error_string(buffer, AV_ERROR_MAX_STRING_SIZE, error);
             SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Error av_frame_get_buffer: %s", buffer);
-            SDL_Log("%d", wantedSamples);
         }
 
         error = swr_set_compensation(swrContext.get(), wantedSamples - frame->nb_samples, frame->sample_rate/8);

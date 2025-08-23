@@ -36,7 +36,6 @@ int Stream::DecoderThread(void* userdata) {
 
         if (lastError == 0) {
             // recebeu frame
-            // SDL_Log("Frame recebido frame pts: %f, clock: %f", decodedFrame->pts*av_q2d(stream->timeBase), stream->video->GetSyncClock());
             stream->frameQueue.Push(std::unique_ptr<AVFrame,AVFrameDeleter>(decodedFrame));
             decodedFrame = av_frame_alloc();
             continue;
@@ -63,10 +62,6 @@ int Stream::DecoderThread(void* userdata) {
             stream->frameQueue.Clear(); // lazy way to remove remaining invalid decoded frames after flush
             continue;
         }
-        if (stream->streamIndex == 0) {
-            SDL_Log("Received packet stream %d, packet pts: %f, clock: %f", stream->streamIndex, packet->pts*av_q2d(stream->timeBase), stream->video->GetSyncClock());
-        }
-        
 
         // Receber Packets
 

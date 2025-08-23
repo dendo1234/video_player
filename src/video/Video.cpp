@@ -12,19 +12,21 @@ extern "C" {
 
 using namespace std;
 
-void Video::ReadPacket(Video* video) {
+double Video::ReadPacket(Video* video) {
     AVPacket* packet = av_packet_alloc();
     int lastError = av_read_frame(video->mediaFile.GetFormatContext(), packet);
 
     if (lastError == 0) {
         if (packet->stream_index == video->videoStream.GetStreamIndex()) {
+            double timestamp = packet->pts*av_q2d(video->videoStream.GetTimeBase());
             video->videoStream.PushPacket(packet);
-            return;
+            return timestamp;
         }
         for (auto& audioStream : video->audioStreams) {
             if (packet->stream_index == audioStream.GetStreamIndex()) {
+                double timestamp = packet->pts*av_q2d(audioStream.GetTimeBase());
                 audioStream.PushPacket(packet);
-                return;
+                return timestamp;
             }
         }
         // Packet is in a stream that is not loaded
@@ -34,19 +36,19 @@ void Video::ReadPacket(Video* video) {
         av_make_error_string(buffer, AV_ERROR_MAX_STRING_SIZE, lastError);
         SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Packet Reader EOF: %s", buffer);
         av_packet_free(&packet);
-        return;
+        return -1;
     } else {
         char buffer[AV_ERROR_MAX_STRING_SIZE];
         av_make_error_string(buffer, AV_ERROR_MAX_STRING_SIZE, lastError);
         SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Packet Reader error: %s", buffer);
         av_packet_free(&packet);
-        return;
+        return -1;
     }
+    return -1;
 }
 
 int Video::PacketReaderThread(void* userdata) {
     Video* video = (Video*)userdata;
-    int numberOfStreams = video->mediaFile.GetNumberOfStreams();
 
     while (!video->m_videoDone) {
         if (video->seekInterface.seekRequested) {
@@ -56,9 +58,11 @@ int Video::PacketReaderThread(void* userdata) {
             video->Seek(video->seekInterface.timestamp);
             video->seekInterface.seekRequested = false;
 
-            for (int i = 0; i < numberOfStreams; i++) {
-                ReadPacket(video);
-            }
+            double timestamp;
+            do {
+                timestamp = ReadPacket(video);
+            } while (timestamp < video->GetSyncClock());
+            
             video->clock.SetSeeking(false);
             uint64_t tac = SDL_GetTicksNS();
             double tempo = (tac - tic) /1e6;
@@ -204,7 +208,6 @@ void Video::Update(uint64_t dt) {
                 frame->data[2],
                 frame->linesize[2]
             );
-        SDL_Log("Textura atualizada, clock: %f", GetSyncClock());
     } 
 }
 
