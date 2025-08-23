@@ -50,7 +50,7 @@ private:
     // Should only be called on the PacketReader Thread
     void Seek(double timestamp);
 
-    static void ReadPacket(Video* video);
+    static const AVPacket* ReadPacket(Video* video);
     static int PacketReaderThread(void* userdata);
 
 

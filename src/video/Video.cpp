@@ -12,21 +12,24 @@ extern "C" {
 
 using namespace std;
 
-double Video::ReadPacket(Video* video) {
+const AVPacket* Video::ReadPacket(Video* video) {
     AVPacket* packet = av_packet_alloc();
+    if (!packet) {
+        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Failed to av_packet_alloc");
+        return packet;
+    }
+    
     int lastError = av_read_frame(video->mediaFile.GetFormatContext(), packet);
 
     if (lastError == 0) {
         if (packet->stream_index == video->videoStream.GetStreamIndex()) {
-            double timestamp = packet->pts*av_q2d(video->videoStream.GetTimeBase());
             video->videoStream.PushPacket(packet);
-            return timestamp;
+            return packet;
         }
         for (auto& audioStream : video->audioStreams) {
             if (packet->stream_index == audioStream.GetStreamIndex()) {
-                double timestamp = packet->pts*av_q2d(audioStream.GetTimeBase());
                 audioStream.PushPacket(packet);
-                return timestamp;
+                return packet;
             }
         }
         // Packet is in a stream that is not loaded
@@ -36,37 +39,41 @@ double Video::ReadPacket(Video* video) {
         av_make_error_string(buffer, AV_ERROR_MAX_STRING_SIZE, lastError);
         SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Packet Reader EOF: %s", buffer);
         av_packet_free(&packet);
-        return -1;
+        return packet; //nullptr
     } else {
         char buffer[AV_ERROR_MAX_STRING_SIZE];
         av_make_error_string(buffer, AV_ERROR_MAX_STRING_SIZE, lastError);
         SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Packet Reader error: %s", buffer);
         av_packet_free(&packet);
-        return -1;
+        return packet; //nullptr
     }
-    return -1;
+    return packet; //nullptr
 }
 
 int Video::PacketReaderThread(void* userdata) {
     Video* video = (Video*)userdata;
+    int videoStreamIndex = video->videoStream.GetStreamIndex();
 
     while (!video->m_videoDone) {
         if (video->seekInterface.seekRequested) {
             SDL_Log("Inciando seek para %f", video->seekInterface.timestamp);
-            uint64_t tic = SDL_GetTicksNS();
             video->clock.SetSeeking(true);
             video->Seek(video->seekInterface.timestamp);
             video->seekInterface.seekRequested = false;
 
-            double timestamp;
-            do {
-                timestamp = ReadPacket(video);
-            } while (timestamp < video->GetSyncClock());
+            const AVPacket* packet = ReadPacket(video);
+            while (packet->stream_index != videoStreamIndex) { // TODO: dangerous pointer dereference (dont do at home)
+                packet = ReadPacket(video);
+            }
+
+            // also very dangerous (scary)
+            double timestamp = packet->pts*av_q2d(video->mediaFile.GetTimeBase(videoStreamIndex));
+            // video's I-frame (keyframe) timestamps drives the sync clock 
+            video->clock.UpdateTime(timestamp);
+            SDL_Log("Seek reajustando clock para %f", timestamp);
+            
             
             video->clock.SetSeeking(false);
-            uint64_t tac = SDL_GetTicksNS();
-            double tempo = (tac - tic) /1e6;
-            SDL_Log("Terminando seek, milisegundos: %f", tempo);
         }
 
         ReadPacket(video);
