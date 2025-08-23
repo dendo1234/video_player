@@ -105,6 +105,7 @@ T Deque<T, MaxSize>::GetBeforePts(int64_t pts) {
         if (frontRef->pts < pts) {
             lastRemoved = std::move(frontRef);
             deque.pop_front();
+            SDL_Log("Deletando frames");
             continue;
         } else {
             break;

@@ -12,49 +12,60 @@ extern "C" {
 
 using namespace std;
 
+void Video::ReadPacket(Video* video) {
+    AVPacket* packet = av_packet_alloc();
+    int lastError = av_read_frame(video->mediaFile.GetFormatContext(), packet);
+
+    if (lastError == 0) {
+        if (packet->stream_index == video->videoStream.GetStreamIndex()) {
+            video->videoStream.PushPacket(packet);
+            return;
+        }
+        for (auto& audioStream : video->audioStreams) {
+            if (packet->stream_index == audioStream.GetStreamIndex()) {
+                audioStream.PushPacket(packet);
+                return;
+            }
+        }
+        // Packet is in a stream that is not loaded
+        av_packet_free(&packet);
+    } else if (lastError == AVERROR_EOF) {
+        char buffer[AV_ERROR_MAX_STRING_SIZE];
+        av_make_error_string(buffer, AV_ERROR_MAX_STRING_SIZE, lastError);
+        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Packet Reader EOF: %s", buffer);
+        av_packet_free(&packet);
+        return;
+    } else {
+        char buffer[AV_ERROR_MAX_STRING_SIZE];
+        av_make_error_string(buffer, AV_ERROR_MAX_STRING_SIZE, lastError);
+        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Packet Reader error: %s", buffer);
+        av_packet_free(&packet);
+        return;
+    }
+}
+
 int Video::PacketReaderThread(void* userdata) {
     Video* video = (Video*)userdata;
-    AVPacket* packet;
+    int numberOfStreams = video->mediaFile.GetNumberOfStreams();
 
     while (!video->m_videoDone) {
-        if (video->requestSeek) {
-            video->Seek(0);
-            video->requestSeek = false;
-        }
-        
-        packet = av_packet_alloc();
-        int lastError = av_read_frame(video->mediaFile.GetFormatContext(), packet);
+        if (video->seekInterface.seekRequested) {
+            SDL_Log("Inciando seek para %f", video->seekInterface.timestamp);
+            uint64_t tic = SDL_GetTicksNS();
+            video->clock.SetSeeking(true);
+            video->Seek(video->seekInterface.timestamp);
+            video->seekInterface.seekRequested = false;
 
-        if (lastError == 0) {
-            if (packet->stream_index == video->videoStream.GetStreamIndex()) {
-                video->videoStream.PushPacket(packet);
-                continue;
+            for (int i = 0; i < numberOfStreams; i++) {
+                ReadPacket(video);
             }
-            bool found = false;
-            for (auto& audioStream : video->audioStreams) {
-                if (packet->stream_index == audioStream.GetStreamIndex()) {
-                    audioStream.PushPacket(packet);
-                    found = true;
-                    break;
-                }
-            }
-            // Packet is in a stream that is not loaded
-            if (found == false) {
-                av_packet_free(&packet);
-            }
-            continue;
-        } else if (lastError == AVERROR_EOF) {
-            char buffer[AV_ERROR_MAX_STRING_SIZE];
-            av_make_error_string(buffer, AV_ERROR_MAX_STRING_SIZE, lastError);
-            SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Packet Reader EOF: %s", buffer);
-            av_packet_free(&packet);
-        } else {
-            char buffer[AV_ERROR_MAX_STRING_SIZE];
-            av_make_error_string(buffer, AV_ERROR_MAX_STRING_SIZE, lastError);
-            SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Packet Reader error: %s", buffer);
-            av_packet_free(&packet);
-            break;
+            video->clock.SetSeeking(false);
+            uint64_t tac = SDL_GetTicksNS();
+            double tempo = (tac - tic) /1e6;
+            SDL_Log("Terminando seek, milisegundos: %f", tempo);
         }
+
+        ReadPacket(video);
     }
     
     return 0;
@@ -158,6 +169,11 @@ void Video::Seek(double timestamp) {
     clock.UpdateTime(timestamp);
 }
 
+void Video::RequestSeek(double timestamp) {
+    seekInterface.seekRequested = true;
+    seekInterface.timestamp = timestamp;
+}
+
 void Video::GuiPass() {
     ImGui::Text("Clock: %f", clock.GetTime());
     videoStream.GuiPass();
@@ -188,6 +204,7 @@ void Video::Update(uint64_t dt) {
                 frame->data[2],
                 frame->linesize[2]
             );
+        SDL_Log("Textura atualizada, clock: %f", GetSyncClock());
     } 
 }
 

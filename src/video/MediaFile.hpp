@@ -24,6 +24,7 @@ public:
 
     int GetVideoStreamIndex() const;
     std::vector<int> GetAudioStreamIndices() const;
+    uint32_t GetNumberOfStreams() const;
 
     AVFormatContext* GetFormatContext() const;
     const AVCodecParameters* GetCodecParameters(int streamIndex) const;
@@ -39,6 +40,10 @@ inline int MediaFile::GetVideoStreamIndex() const {
 
 inline std::vector<int> MediaFile::GetAudioStreamIndices() const {
     return audioStreamIndices;
+}
+
+inline uint32_t MediaFile::GetNumberOfStreams() const {
+    return context->nb_streams;
 }
 
 inline AVFormatContext* MediaFile::GetFormatContext() const {

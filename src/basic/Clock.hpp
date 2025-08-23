@@ -5,8 +5,10 @@ class Clock {
     double time{0.0};
     uint64_t updated_at{SDL_GetTicksNS()}; // ns
 
-public:
     bool paused{false};
+    // seeking is like paused, but activated during seeking and deactivated after the seek
+    bool seeking{false};
+public:
 
     Clock();
     Clock(double time);
@@ -15,4 +17,6 @@ public:
     double GetTime();
     void UpdateDt(double dt);
     void UpdateTime(double newTime);
+    void SetPaused(bool paused);
+    void SetSeeking(bool seeking);
 };

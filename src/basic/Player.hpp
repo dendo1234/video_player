@@ -33,7 +33,7 @@ private:
     uint64_t time{0};
 
 public:
-    Video video{"input2.mp4", this->renderer.get()};
+    Video video{"input.mp4", this->renderer.get()};
 
     Player();
 

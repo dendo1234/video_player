@@ -46,34 +46,35 @@ private:
 
     void FlushStreams();
 
+    // Should only be called on the PacketReader Thread
+    void Seek(double timestamp);
+
+    static void ReadPacket(Video* video);
     static int PacketReaderThread(void* userdata);
 
 
 public:
     long long int m_startTick{-0};
 
-    bool requestSeek{false};
+    struct SeekInterface {
+        bool seekRequested{false};
+        double timestamp;
+    } seekInterface;
 
     Video(const char* filename, SDL_Renderer* renderer);
     ~Video();
 
     double GetSyncClock();
     SDL_AudioDeviceID GetAudioDeviceID();
-    void Seek(double timestamp);
+
+    void RequestSeek(double timestamp);
 
     void Render() const;
     void Update(uint64_t dt);
     void Start();
     void GuiPass();
 
-    bool Is(const std::string& type) const;
-
 };
-
-
-inline bool Video::Is(const std::string& type) const {
-    return type == "Video";
-}
 
 inline SDL_AudioDeviceID Video::GetAudioDeviceID() {
     return m_audioDevideID;

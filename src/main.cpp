@@ -4,7 +4,7 @@
 #include "backends/imgui_impl_sdl3.h"
 
 SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]] int argc, [[maybe_unused]] char **argv) {
-    SDL_SetHint(SDL_HINT_LOGGING, "verbose");
+    SDL_SetHint(SDL_HINT_LOGGING, "info");
     // SDL_SetLogPriorities(SDL_LOG_PRIORITY_VERBOSE);
     SDL_Init(SDL_INIT_AUDIO);
 
@@ -44,9 +44,25 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
     switch (event->type) {
     case SDL_EVENT_QUIT:
         return SDL_APP_SUCCESS;
-    case SDL_EVENT_KEY_DOWN:
-        player->video.requestSeek = true;
-        break;
+    case SDL_EVENT_KEY_DOWN: {
+        SDL_KeyboardEvent& keyEvent = event->key;
+        switch (keyEvent.key) {
+        case SDLK_RIGHT:
+            player->video.RequestSeek(player->video.GetSyncClock() + 5);
+            break;
+        case SDLK_LEFT:
+            player->video.RequestSeek(player->video.GetSyncClock() - 5);
+            break;
+        case SDLK_L:
+            player->video.RequestSeek(player->video.GetSyncClock() + 10);
+            break;
+        case SDLK_J:
+            player->video.RequestSeek(player->video.GetSyncClock() - 10);
+            break;
+        default:
+            break;
+        }
+    }
     default:
         break;
     }
