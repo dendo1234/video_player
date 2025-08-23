@@ -105,7 +105,7 @@ double AudioStream::CalculateDiff(int64_t pts) {
 int AudioStream::AudioConsumerThread() {
     double diffWeightedSum = 0.0;
     static constexpr double factor = 0.8;
-    static constexpr double diffThreshold = 0.03;
+    static constexpr double diffThreshold = 0.01;
     static constexpr double noSyncThreshold = 0.1; // 100 ms
     static constexpr unsigned int minimalDiffCount = 10;
     static constexpr double desiredBufferSizeSeconds = 0.05;
@@ -147,8 +147,8 @@ int AudioStream::AudioConsumerThread() {
                 if (fabs(diffAvg) < noSyncThreshold) {
                     if (fabs(diffAvg) > diffThreshold) {
                         wantedSamples += static_cast<int>(diffAvg * frame->sample_rate);
-                        int minsize = static_cast<int>(frame->nb_samples * 0.6);
-                        int maxsize = static_cast<int>(frame->nb_samples * 1.4);
+                        int minsize = static_cast<int>(frame->nb_samples * 0.95);
+                        int maxsize = static_cast<int>(frame->nb_samples * 1.05);
 
                         wantedSamples = av_clip(wantedSamples, minsize, maxsize);
                     }
