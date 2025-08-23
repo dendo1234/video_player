@@ -59,7 +59,7 @@ int Stream::DecoderThread(void* userdata) {
         if (packet == nullptr) {
             // Flush
             avcodec_flush_buffers(stream->context.get());
-            stream->frameQueue.Clear(); // lazy way to remove remaining invalid decoded frames after flush
+            stream->frameQueue.Flush(); // lazy way to remove remaining invalid decoded frames after flush
             continue;
         }
 

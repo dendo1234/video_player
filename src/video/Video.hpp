@@ -25,6 +25,7 @@ extern "C" {
 
 class Video {
 public:
+    // TODO: this should be atomic (scary)
     bool m_videoDone{false};
 private:
     MediaFile mediaFile;

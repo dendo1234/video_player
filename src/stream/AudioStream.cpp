@@ -61,14 +61,6 @@ void AudioStream::CreateThreads() {
 
 void AudioStream::Flush() {
     Stream::Flush();
-
-    // Flush swrContext
-    int numberOfSamples  = swr_convert(swrContext.get(),nullptr,0,nullptr,0);
-    if (numberOfSamples < 0) {
-        char buffer[AV_ERROR_MAX_STRING_SIZE];
-        av_make_error_string(buffer, AV_ERROR_MAX_STRING_SIZE, numberOfSamples);
-        SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Error swr convert: %s", buffer);
-    }
 }
 
 void AudioStream::GuiPass() {
@@ -127,8 +119,19 @@ int AudioStream::AudioConsumerThread() {
         
         std::unique_ptr<AVFrame, AVFrameDeleter> frame = frameQueue.Get();
         if (frame == nullptr) {
+            // we are probaly seeking
+            if (!SDL_ClearAudioStream(sdlAudioStream.get())) {
+                SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't clear audio stream: %s", SDL_GetError());
+            }
+
+            // clear the swr buffer
+            int numberOfSamples  = swr_convert(swrContext.get(),nullptr,0,nullptr,0);
+            if (numberOfSamples < 0) {
+                char buffer[AV_ERROR_MAX_STRING_SIZE];
+                av_make_error_string(buffer, AV_ERROR_MAX_STRING_SIZE, numberOfSamples);
+                SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Error swr convert: %s", buffer);
+            }
             continue;
-            return 0;
         }
         
         int wantedSamples = frame->nb_samples;
@@ -154,20 +157,6 @@ int AudioStream::AudioConsumerThread() {
 
                     diffCount = 0;
                     diffWeightedSum = 0;
-                    // if (!SDL_ClearAudioStream(sdlAudioStream.get())) {
-                    //     SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't clear audio stream: %s", SDL_GetError());
-                    // }
-
-                    // // clear the swr buffer
-                    // int numberOfSamples  = swr_convert(swrContext.get(),nullptr,0,nullptr,0);
-                    // if (numberOfSamples < 0) {
-                    //     char buffer[AV_ERROR_MAX_STRING_SIZE];
-                    //     av_make_error_string(buffer, AV_ERROR_MAX_STRING_SIZE, numberOfSamples);
-                    //     SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Error swr convert: %s", buffer);
-                    // }
-                    
-                    // TODO: investigate when seeking is done
-                    // frame = frameQueue.BlockingGetBeforePts(static_cast<int64_t>(video->GetSyncClock() / av_q2d(time_base)));
                 }
             }
         }
