@@ -48,7 +48,7 @@ private:
     void FlushStreams();
 
     // Should only be called on the PacketReader Thread
-    void Seek(double timestamp);
+    void Seek(double timestamp, double delta);
 
     static const AVPacket* ReadPacket(Video* video);
     static int PacketReaderThread(void* userdata);
@@ -59,7 +59,10 @@ public:
 
     struct SeekInterface {
         bool seekRequested{false};
-        double timestamp;
+        double targetTimestamp;
+        // The delta value is used to diferentiate a relative seek from the current timestamp form a absolute seek
+        // delta = 0 means absolute seek
+        double delta;
     } seekInterface;
 
     Video(const char* filename, SDL_Renderer* renderer);
@@ -68,7 +71,7 @@ public:
     double GetSyncClock();
     SDL_AudioDeviceID GetAudioDeviceID();
 
-    void RequestSeek(double timestamp);
+    void RequestSeek(double targetTimestamp, double delta = 0);
 
     void Render() const;
     void Update(uint64_t dt);

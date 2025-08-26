@@ -48,16 +48,16 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
         SDL_KeyboardEvent& keyEvent = event->key;
         switch (keyEvent.key) {
         case SDLK_RIGHT:
-            player->video.RequestSeek(player->video.GetSyncClock() + 5);
+            player->video.RequestSeek(player->video.GetSyncClock() + 5, 5);
             break;
         case SDLK_LEFT:
-            player->video.RequestSeek(player->video.GetSyncClock() - 5);
+            player->video.RequestSeek(player->video.GetSyncClock() - 5, -5);
             break;
         case SDLK_L:
-            player->video.RequestSeek(player->video.GetSyncClock() + 10);
+            player->video.RequestSeek(player->video.GetSyncClock() + 10, 10);
             break;
         case SDLK_J:
-            player->video.RequestSeek(player->video.GetSyncClock() - 10);
+            player->video.RequestSeek(player->video.GetSyncClock() - 10, -10);
             break;
         default:
             break;

@@ -30,7 +30,9 @@ public:
     const AVCodecParameters* GetCodecParameters(int streamIndex) const;
     AVRational GetTimeBase(int streamIndex) const;
 
-    void Seek(double timestamp, int flags);
+    // Performas a Seek to the nearest keyframe (I-Frame) to the timestamp
+    // Delta value avoids going backwards
+    void Seek(double timestamp, double delta, int flags = 0);
 
 };
 

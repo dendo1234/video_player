@@ -56,10 +56,9 @@ int Video::PacketReaderThread(void* userdata) {
 
     while (!video->m_videoDone) {
         if (video->seekInterface.seekRequested) {
-            SDL_Log("Inciando seek para %f", video->seekInterface.timestamp);
+            // SDL_Log("Inciando seek para %f", video->seekInterface.targetTimestamp);
             video->clock.SetSeeking(true);
-            video->Seek(video->seekInterface.timestamp);
-            video->seekInterface.seekRequested = false;
+            video->Seek(video->seekInterface.targetTimestamp, video->seekInterface.delta);
 
             const AVPacket* packet = ReadPacket(video);
             while (packet->stream_index != videoStreamIndex) { // TODO: dangerous pointer dereference (dont do at home)
@@ -70,9 +69,10 @@ int Video::PacketReaderThread(void* userdata) {
             double timestamp = packet->pts*av_q2d(video->mediaFile.GetTimeBase(videoStreamIndex));
             // video's I-frame (keyframe) timestamps drives the sync clock 
             video->clock.UpdateTime(timestamp);
-            SDL_Log("Seek reajustando clock para %f", timestamp);
+            // SDL_Log("Seek reajustando clock para %f", timestamp);
             
             
+            video->seekInterface.seekRequested = false;
             video->clock.SetSeeking(false);
         }
 
@@ -173,16 +173,15 @@ double Video::GetSyncClock() {
     return clock.GetTime();
 }
 
-void Video::Seek(double timestamp) {
-    int flags = timestamp > clock.GetTime() ? 0 : AVSEEK_FLAG_BACKWARD;
-    mediaFile.Seek(timestamp, flags);
+void Video::Seek(double targetTimestamp, double delta) {
+    mediaFile.Seek(targetTimestamp, delta);
     FlushStreams();
-    clock.UpdateTime(timestamp);
 }
 
-void Video::RequestSeek(double timestamp) {
+void Video::RequestSeek(double targetTimestamp, double delta) {
+    seekInterface.targetTimestamp = targetTimestamp;
+    seekInterface.delta = delta;
     seekInterface.seekRequested = true;
-    seekInterface.timestamp = timestamp;
 }
 
 void Video::GuiPass() {
