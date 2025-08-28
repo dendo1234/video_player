@@ -29,6 +29,8 @@ public:
     AVFormatContext* GetFormatContext() const;
     const AVCodecParameters* GetCodecParameters(int streamIndex) const;
     AVRational GetTimeBase(int streamIndex) const;
+    double GetStartTime() const;
+    double GetDuration() const;
 
     // Performas a Seek to the nearest keyframe (I-Frame) to the timestamp
     // Delta value avoids going backwards
@@ -58,4 +60,11 @@ inline const AVCodecParameters* MediaFile::GetCodecParameters(int streamIndex) c
 
 inline AVRational MediaFile::GetTimeBase(int streamIndex) const {
     return context->streams[streamIndex]->time_base;
+}
+
+inline double MediaFile::GetStartTime() const {
+    return static_cast<double>(context->start_time)/AV_TIME_BASE;
+}
+inline double MediaFile::GetDuration() const {
+    return static_cast<double>(context->duration)/AV_TIME_BASE;
 }

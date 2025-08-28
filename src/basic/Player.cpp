@@ -36,14 +36,7 @@ void Player::GuiPass() {
     if (show_demo_window)
         ImGui::ShowDemoWindow(&show_demo_window);
 
-
-    ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
-    window_flags |= ImGuiWindowFlags_NoMove;
-    ImGui::SetNextWindowBgAlpha(0.35f); // Transparent background
-    if (ImGui::Begin("Debug Overlay", nullptr, window_flags)) {
-        video.GuiPass();
-    }
-    ImGui::End();
+    video.GuiPass();
 
     ImGui::Render();
     ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(), renderer.get());
