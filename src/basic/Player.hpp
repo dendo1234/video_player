@@ -23,7 +23,7 @@ public:
 private:
     float main_scale;
 
-    bool show_demo_window{false};
+    bool show_demo_window{true};
 
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
@@ -33,7 +33,7 @@ private:
     uint64_t time{0};
 
 public:
-    Video video{"input.mp4", this->renderer.get()};
+    Video video{"input3.mkv", this->renderer.get()};
 
     Player();
 

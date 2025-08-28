@@ -72,6 +72,7 @@ public:
     SDL_AudioDeviceID GetAudioDeviceID();
 
     void RequestSeek(double targetTimestamp, double delta = 0);
+    void TogglePause();
 
     void Render() const;
     void Update(uint64_t dt);

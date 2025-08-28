@@ -44,6 +44,10 @@ void Clock::SetPaused(bool paused) {
     updated_at = SDL_GetTicksNS();
 }
 
+void Clock::TogglePaused() {
+    paused = !paused;
+}
+
 void Clock::SetSeeking(bool seeking) {
     this->seeking = seeking;
 

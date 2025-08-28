@@ -18,5 +18,6 @@ public:
     void UpdateDt(double dt);
     void UpdateTime(double newTime);
     void SetPaused(bool paused);
+    void TogglePaused();
     void SetSeeking(bool seeking);
 };

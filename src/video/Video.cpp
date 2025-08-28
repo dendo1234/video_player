@@ -184,11 +184,20 @@ void Video::RequestSeek(double targetTimestamp, double delta) {
     seekInterface.seekRequested = true;
 }
 
+void Video::TogglePause() {
+    clock.TogglePaused();
+}
+
 void Video::GuiPass() {
     ImGui::Text("Clock: %f", clock.GetTime());
     videoStream.GuiPass();
     for (auto &&stream : audioStreams) {
         stream.GuiPass();
+    }
+
+    float shownTime = clock.GetTime();
+    if (ImGui::SliderFloat("time:", &shownTime, 0, 100)) {
+        RequestSeek(shownTime, 0);
     }
 }
 

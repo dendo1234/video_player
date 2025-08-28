@@ -59,6 +59,8 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
         case SDLK_J:
             player->video.RequestSeek(player->video.GetSyncClock() - 10, -10);
             break;
+        case SDLK_SPACE:
+            player->video.TogglePause();
         default:
             break;
         }
