@@ -55,7 +55,7 @@ int Video::PacketReaderThread(void* userdata) {
     int videoStreamIndex = video->videoStream.GetStreamIndex();
 
     while (!video->m_videoDone) {
-        if (video->seekInterface.seekRequested) {
+        if (video->seekInterface.seekRequested.load(memory_order::acquire)) {
             // SDL_Log("Inciando seek para %f", video->seekInterface.targetTimestamp);
             video->clock.SetSeeking(true);
             video->Seek(video->seekInterface.targetTimestamp, video->seekInterface.delta);
@@ -72,7 +72,7 @@ int Video::PacketReaderThread(void* userdata) {
             // SDL_Log("Seek reajustando clock para %f", timestamp);
             
             
-            video->seekInterface.seekRequested = false;
+            video->seekInterface.seekRequested.store(false, memory_order::relaxed);
             video->clock.SetSeeking(false);
         }
 
@@ -181,7 +181,7 @@ void Video::Seek(double targetTimestamp, double delta) {
 void Video::RequestSeek(double targetTimestamp, double delta) {
     seekInterface.targetTimestamp = targetTimestamp;
     seekInterface.delta = delta;
-    seekInterface.seekRequested = true;
+    seekInterface.seekRequested.store(true, memory_order::release);
 }
 
 void Video::TogglePause() {

@@ -1,5 +1,6 @@
 #pragma once
 #include <SDL3/SDL.h>
+#include <atomic>
 #include <memory>
 #include <queue>
 #include <array>
@@ -57,7 +58,7 @@ public:
     long long int m_startTick{-0};
 
     struct SeekInterface {
-        bool seekRequested{false};
+        std::atomic<bool> seekRequested{false};
         double targetTimestamp;
         // The delta value is used to diferentiate a relative seek from the current timestamp form a absolute seek
         // delta = 0 means absolute seek
