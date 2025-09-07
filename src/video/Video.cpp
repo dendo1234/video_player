@@ -1,4 +1,5 @@
 #include <video/Video.hpp>
+#include <basic/Player.hpp>
 
 extern "C" {
 #include "libavcodec/avcodec.h"
@@ -137,14 +138,14 @@ std::vector<AudioStream> Video::InitializeAudioStreams() {
 }
 
 
-Video::Video(const char* filename, SDL_Renderer* renderer) 
-    : mediaFile(filename),
+Video::Video(const char* filename, Player& player)
+    : player{player},
+    mediaFile(filename),
     videoStream{InitializeVideoStream()},
     m_audioDevideID{SDL_OpenAudioDevice(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, nullptr)},
-    audioStreams{InitializeAudioStreams()},
-    renderer{renderer} {
+    audioStreams{InitializeAudioStreams()} {
     
-    texture = unique_ptr<SDL_Texture, SDL_TextureDeleter>(SDL_CreateTexture(renderer, SDL_PIXELFORMAT_YV12, SDL_TEXTUREACCESS_STREAMING, videoStream.GetWidth(), videoStream.GetHeight()));
+    texture = unique_ptr<SDL_Texture, SDL_TextureDeleter>(SDL_CreateTexture(player.renderer.get(), SDL_PIXELFORMAT_YV12, SDL_TEXTUREACCESS_STREAMING, videoStream.GetWidth(), videoStream.GetHeight()));
 
     InitializeThreads();
 
@@ -249,7 +250,7 @@ void Video::Update(uint64_t dt) {
 }
 
 void Video::Render() const {
-    bool lastError = SDL_RenderTexture(renderer, texture.get(), nullptr, nullptr);
+    bool lastError = SDL_RenderTexture(player.renderer.get(), texture.get(), nullptr, nullptr);
     if (lastError == false) {
         SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Error rendering video texture: %s", SDL_GetError());
     }

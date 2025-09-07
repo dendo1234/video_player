@@ -32,17 +32,19 @@ struct ReadPacketReturn {
     int64_t pts{0};
 };
 
+class Player; // "basic/Player.hpp"
 
 class Video {
 public:
     bool m_videoDone{false};
 private:
+    Player& player;
+
     MediaFile mediaFile;
     VideoStream videoStream;
     SDL_AudioDeviceID m_audioDevideID{0};
     std::vector<AudioStream> audioStreams;
 
-    SDL_Renderer* renderer;
     std::unique_ptr<SDL_Texture, SDL_TextureDeleter> texture;
 
     std::unique_ptr<SDL_Thread, SDL_ThreadDeleter> packageReader;
@@ -74,7 +76,7 @@ public:
         double delta;
     } seekInterface;
 
-    Video(const char* filename, SDL_Renderer* renderer);
+    Video(const char* filename, Player& player);
     ~Video();
 
     double GetSyncClock();
