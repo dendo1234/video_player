@@ -12,42 +12,44 @@ extern "C" {
 
 using namespace std;
 
-const AVPacket* Video::ReadPacket(Video* video) {
+
+ReadPacketReturn Video::ReadPacket(Video* video) {
     AVPacket* packet = av_packet_alloc();
     if (!packet) {
         SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Failed to av_packet_alloc");
-        return packet;
+        return ReadPacketReturn{.status = ReadPacketReturn::Status::FAILURE};
     }
     
     int lastError = av_read_frame(video->mediaFile.GetFormatContext(), packet);
 
     if (lastError == 0) {
+        ReadPacketReturn ret{.status = ReadPacketReturn::Status::SUCESS,
+            .streamIndex = packet->stream_index,
+            .pts = packet->pts };
         if (packet->stream_index == video->videoStream.GetStreamIndex()) {
             video->videoStream.PushPacket(packet);
-            return packet;
+            return ret;
         }
         for (auto& audioStream : video->audioStreams) {
             if (packet->stream_index == audioStream.GetStreamIndex()) {
                 audioStream.PushPacket(packet);
-                return packet;
+                return ret;
             }
         }
         // Packet is in a stream that is not loaded
         av_packet_free(&packet);
     } else if (lastError == AVERROR_EOF) {
-        char buffer[AV_ERROR_MAX_STRING_SIZE];
-        av_make_error_string(buffer, AV_ERROR_MAX_STRING_SIZE, lastError);
-        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Packet Reader EOF: %s", buffer);
         av_packet_free(&packet);
-        return packet; //nullptr
+        return ReadPacketReturn{.status = ReadPacketReturn::Status::END};
     } else {
         char buffer[AV_ERROR_MAX_STRING_SIZE];
         av_make_error_string(buffer, AV_ERROR_MAX_STRING_SIZE, lastError);
         SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Packet Reader error: %s", buffer);
         av_packet_free(&packet);
-        return packet; //nullptr
+        return ReadPacketReturn{.status = ReadPacketReturn::Status::FAILURE};
     }
-    return packet; //nullptr
+    av_packet_free(&packet);
+    return ReadPacketReturn{.status = ReadPacketReturn::Status::FAILURE};
 }
 
 int Video::PacketReaderThread(void* userdata) {
@@ -56,27 +58,31 @@ int Video::PacketReaderThread(void* userdata) {
 
     while (!video->m_videoDone) {
         if (video->seekInterface.seekRequested.load(memory_order::acquire)) {
-            // SDL_Log("Inciando seek para %f", video->seekInterface.targetTimestamp);
             video->clock.SetSeeking(true);
             video->Seek(video->seekInterface.targetTimestamp, video->seekInterface.delta);
 
-            const AVPacket* packet = ReadPacket(video);
-            while (packet->stream_index != videoStreamIndex) { // TODO: dangerous pointer dereference (dont do at home)
-                packet = ReadPacket(video);
-            }
+            ReadPacketReturn packetData;
 
-            // also very dangerous (scary)
-            double timestamp = packet->pts*av_q2d(video->mediaFile.GetTimeBase(videoStreamIndex));
+            do {
+                packetData = ReadPacket(video);
+                if (packetData.status != ReadPacketReturn::Status::SUCESS) {
+                    SDL_Delay(10);
+                    continue;
+                }
+            } while (packetData.streamIndex != videoStreamIndex);
+
+            double timestamp = packetData.pts*av_q2d(video->mediaFile.GetTimeBase(videoStreamIndex));
             // video's I-frame (keyframe) timestamps drives the sync clock 
             video->clock.UpdateTime(timestamp);
-            // SDL_Log("Seek reajustando clock para %f", timestamp);
-            
             
             video->seekInterface.seekRequested.store(false, memory_order::relaxed);
             video->clock.SetSeeking(false);
         }
 
-        ReadPacket(video);
+        auto ret = ReadPacket(video);
+        if (ret.status == ReadPacketReturn::Status::END) {
+            SDL_Delay(10);
+        }
     }
     
     return 0;

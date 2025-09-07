@@ -22,6 +22,15 @@ extern "C" {
 }
 
 
+struct ReadPacketReturn {
+    enum Status {
+        SUCESS,
+        END, // EOF
+        FAILURE
+    } status;
+    int streamIndex{0};
+    int64_t pts{0};
+};
 
 
 class Video {
@@ -50,7 +59,7 @@ private:
     // Should only be called on the PacketReader Thread
     void Seek(double timestamp, double delta);
 
-    static const AVPacket* ReadPacket(Video* video);
+    static ReadPacketReturn ReadPacket(Video* video);
     static int PacketReaderThread(void* userdata);
 
 
