@@ -5,20 +5,29 @@
 #include <string_view>
 #include "imgui.h"
 #include <basic/GuiHandler.hpp>
+#include <basic/EventHandler.hpp>
 
-inline constexpr auto SDL_WindowDeleter = [](SDL_Window* ptr) {
+inline auto SDL_WindowDeleter = [](SDL_Window* ptr) {
     SDL_DestroyWindow(ptr);
 };
 
-inline constexpr auto SDL_RendererDeleter = [](SDL_Renderer* ptr) {
+inline auto SDL_RendererDeleter = [](SDL_Renderer* ptr) {
     SDL_DestroyRenderer(ptr);
 };
 
 class Player {
+private:
+    int windowWidth{640};
+    int windowHeight{360};
+
+    const int barHeight{30};
+
 public:
     std::unique_ptr<SDL_Window, decltype(SDL_WindowDeleter)> window{CreateWindow()};
     std::unique_ptr<SDL_Renderer, decltype(SDL_RendererDeleter)> renderer{CreateRenderer()};
+    std::unique_ptr<SDL_Texture, SDL_TextureDeleter> videoTexture{CreateVideoTexture(windowWidth, windowHeight-barHeight)};
     GuiHandler guiHandler{this->window.get(), this->renderer.get()};
+    EventHandler eventHandler{*this};
 
 private:
     float main_scale;
@@ -29,6 +38,7 @@ private:
 
     std::unique_ptr<SDL_Window, decltype(SDL_WindowDeleter)> CreateWindow();
     std::unique_ptr<SDL_Renderer, decltype(SDL_RendererDeleter)> CreateRenderer();
+    std::unique_ptr<SDL_Texture, SDL_TextureDeleter> CreateVideoTexture(int width, int height);
 
     uint64_t time{0};
 
@@ -39,5 +49,7 @@ public:
 
     void GuiPass();
     uint64_t DeltaTime();
+    void ResizeWindow(int width, int height);
 
+    friend class EventHandler;
 };

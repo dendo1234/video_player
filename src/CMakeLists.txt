@@ -1,5 +1,6 @@
 set(PROJECT_SOURCES
     basic/Clock.cpp
+    basic/EventHandler.cpp
     basic/GuiHandler.cpp
     basic/Player.cpp
     stream/AudioStream.cpp

@@ -7,13 +7,19 @@
 
 
 std::unique_ptr<SDL_Window, decltype(SDL_WindowDeleter)> Player::CreateWindow() {
-    SDL_Window* window = SDL_CreateWindow("video player", 640, 360, SDL_WINDOW_RESIZABLE);
+    SDL_Window* window = SDL_CreateWindow("video player", windowWidth, windowHeight, SDL_WINDOW_RESIZABLE);
+    SDL_SetWindowMinimumSize(window, 100, 30);
     return std::unique_ptr<SDL_Window, decltype(SDL_WindowDeleter)>(window);
 }
 
 std::unique_ptr<SDL_Renderer, decltype(SDL_RendererDeleter)> Player::CreateRenderer() {
     SDL_Renderer* renderer = SDL_CreateRenderer(window.get(), nullptr);
     return std::unique_ptr<SDL_Renderer, decltype(SDL_RendererDeleter)>(renderer);
+}
+
+std::unique_ptr<SDL_Texture, SDL_TextureDeleter> Player::CreateVideoTexture(int width, int height) {
+    SDL_Texture* texture = SDL_CreateTexture(renderer.get(), SDL_PixelFormat::SDL_PIXELFORMAT_YV12, SDL_TextureAccess::SDL_TEXTUREACCESS_TARGET, width, height);
+    return std::unique_ptr<SDL_Texture, SDL_TextureDeleter>(texture);
 }
 
 Player::Player() {
@@ -47,4 +53,14 @@ uint64_t Player::DeltaTime() {
     time = SDL_GetTicksNS();
 
     return dt;
+}
+
+void Player::ResizeWindow(int width, int height) {
+    windowWidth = width;
+    windowHeight = height;
+
+    videoTexture = CreateVideoTexture(width, height-30);
+
+
+
 }
