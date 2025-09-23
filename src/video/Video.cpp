@@ -176,6 +176,13 @@ void Video::Start() {
     m_startTick = SDL_GetTicks();
 }
 
+int Video::GetVideoWidth() {
+    return videoStream.GetWidth();
+}
+int Video::GetVideoHeight() {
+    return videoStream.GetHeight();
+}
+
 double Video::GetSyncClock() {
     return clock.GetTime();
 }

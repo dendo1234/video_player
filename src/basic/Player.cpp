@@ -17,8 +17,15 @@ std::unique_ptr<SDL_Renderer, decltype(SDL_RendererDeleter)> Player::CreateRende
     return std::unique_ptr<SDL_Renderer, decltype(SDL_RendererDeleter)>(renderer);
 }
 
-std::unique_ptr<SDL_Texture, SDL_TextureDeleter> Player::CreateVideoTexture(int width, int height) {
+std::unique_ptr<SDL_Texture, SDL_TextureDeleter> Player::CreateVideoTexture(int width, int height, int videoWidth, int videoHeight) {
     SDL_Texture* texture = SDL_CreateTexture(renderer.get(), SDL_PixelFormat::SDL_PIXELFORMAT_YV12, SDL_TextureAccess::SDL_TEXTUREACCESS_TARGET, width, height);
+    SDL_SetRenderTarget(renderer.get(), texture);
+    bool teste = SDL_SetRenderLogicalPresentation(renderer.get(), videoWidth, videoHeight, SDL_RendererLogicalPresentation::SDL_LOGICAL_PRESENTATION_LETTERBOX);
+    if (!teste) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Error creating videoTexture: %s", SDL_GetError());
+    }
+    // (void)aspectRatio;
+    SDL_SetRenderTarget(renderer.get(), nullptr);
     return std::unique_ptr<SDL_Texture, SDL_TextureDeleter>(texture);
 }
 
@@ -55,11 +62,29 @@ uint64_t Player::DeltaTime() {
     return dt;
 }
 
+void Player::Render() { 
+    SDL_SetRenderTarget(renderer.get(), videoTexture.get());
+    SDL_RenderClear(renderer.get());
+    video.Render();
+    SDL_SetRenderTarget(renderer.get(), nullptr);
+    SDL_RenderClear(renderer.get());
+
+    SDL_FRect videoTextureRect {
+        .x = 0.0f, .y = 0.0f,
+        .w = static_cast<float>(windowWidth), .h = static_cast<float>(windowHeight - barHeight)
+    };
+    SDL_RenderTexture(renderer.get(), videoTexture.get(), nullptr, &videoTextureRect);
+    GuiPass();
+    SDL_RenderPresent(renderer.get());
+
+
+}
+
 void Player::ResizeWindow(int width, int height) {
     windowWidth = width;
     windowHeight = height;
 
-    videoTexture = CreateVideoTexture(width, height-30);
+    videoTexture = CreateVideoTexture(width, height, video.GetVideoWidth(), video.GetVideoHeight());
 
 
 

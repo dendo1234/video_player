@@ -27,6 +27,7 @@ public:
     uint32_t GetNumberOfStreams() const;
 
     AVFormatContext* GetFormatContext() const;
+    const AVRational& GetAspectRatio(int streamIndex) const;
     const AVCodecParameters* GetCodecParameters(int streamIndex) const;
     AVRational GetTimeBase(int streamIndex) const;
     double GetStartTime() const;
@@ -56,6 +57,10 @@ inline AVFormatContext* MediaFile::GetFormatContext() const {
 
 inline const AVCodecParameters* MediaFile::GetCodecParameters(int streamIndex) const {
     return context->streams[streamIndex]->codecpar;
+}
+
+inline const AVRational& MediaFile::GetAspectRatio(int streamIndex) const {
+    return context->streams[streamIndex]->sample_aspect_ratio;
 }
 
 inline AVRational MediaFile::GetTimeBase(int streamIndex) const {

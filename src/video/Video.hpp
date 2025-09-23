@@ -79,6 +79,8 @@ public:
     Video(const char* filename, Player& player);
     ~Video();
 
+    int GetVideoWidth();
+    int GetVideoHeight();
     double GetSyncClock();
     SDL_AudioDeviceID GetAudioDeviceID();
 

@@ -24,10 +24,7 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 
     player->video.Update(dt);
 
-    SDL_RenderClear(player->renderer.get());
-    player->video.Render();
-    player->GuiPass();
-    SDL_RenderPresent(player->renderer.get());
+    player->Render();
 
     uint64_t frameTime = SDL_GetTicksNS() - frameStart;
     if (frameTime < FRAME_TIME) {

@@ -20,14 +20,17 @@ private:
     int windowWidth{640};
     int windowHeight{360};
 
-    const int barHeight{30};
+    const int barHeight{20};
 
 public:
+    EventHandler eventHandler{*this};
+
     std::unique_ptr<SDL_Window, decltype(SDL_WindowDeleter)> window{CreateWindow()};
     std::unique_ptr<SDL_Renderer, decltype(SDL_RendererDeleter)> renderer{CreateRenderer()};
-    std::unique_ptr<SDL_Texture, SDL_TextureDeleter> videoTexture{CreateVideoTexture(windowWidth, windowHeight-barHeight)};
     GuiHandler guiHandler{this->window.get(), this->renderer.get()};
-    EventHandler eventHandler{*this};
+    Video video{"input3.mkv", *this};
+
+    std::unique_ptr<SDL_Texture, SDL_TextureDeleter> videoTexture{CreateVideoTexture(windowWidth, windowHeight-barHeight, video.GetVideoWidth(), video.GetVideoHeight())};
 
 private:
     float main_scale;
@@ -38,16 +41,16 @@ private:
 
     std::unique_ptr<SDL_Window, decltype(SDL_WindowDeleter)> CreateWindow();
     std::unique_ptr<SDL_Renderer, decltype(SDL_RendererDeleter)> CreateRenderer();
-    std::unique_ptr<SDL_Texture, SDL_TextureDeleter> CreateVideoTexture(int width, int height);
+    std::unique_ptr<SDL_Texture, SDL_TextureDeleter> CreateVideoTexture(int width, int height, int videoWidth, int videoHeight);
 
     uint64_t time{0};
 
 public:
-    Video video{"input3.mkv", *this};
 
     Player();
 
     void GuiPass();
+    void Render();
     uint64_t DeltaTime();
     void ResizeWindow(int width, int height);
 
