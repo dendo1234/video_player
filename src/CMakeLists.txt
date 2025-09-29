@@ -36,6 +36,20 @@ target_link_libraries(${PROJECT_NAME}
         ${SWRESAMPLE_LIBRARY}
 )
 
+if(EMSCRIPTEN)
+    set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".html")
+
+    target_compile_options(${PROJECT_NAME}
+        PRIVATE
+            -pthread)   
+
+    target_link_options(${PROJECT_NAME}
+        PRIVATE
+            -pthread
+            -s INITIAL_MEMORY=536870912
+            --preload-file input.mp4)   
+endif()
+
 
 add_custom_target(copy_data ALL
     COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different

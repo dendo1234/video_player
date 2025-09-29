@@ -162,7 +162,8 @@ Video::~Video() {
 }
 
 void Video::InitializeThreads() {
-    packageReader = unique_ptr<SDL_Thread, SDL_ThreadDeleter>(SDL_CreateThread(PacketReaderThread, "Package reader", (void*)this));
+    packageReader = std::jthread(PacketReaderThread, (void*)this);
+    packageReader.detach();
 }
 
 void Video::FlushStreams() {

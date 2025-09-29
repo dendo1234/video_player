@@ -1,0 +1,25 @@
+{
+  "version": 3,
+  "configurePresets": [
+    {
+      "name": "default",
+      "binaryDir": "${sourceDir}/build/${presetName}"
+    },
+    {
+      "name": "vcpkg",
+      "inherits": "default",
+      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+    },
+    {
+      "name": "vcpkg-emscripten",
+      "inherits": "vcpkg",
+      "description": "This is mostily for fun as the performance is not great on wasm. It is recomended to use this target only on in linux or WSL and with a Makefiles generator",
+      "generator": "Unix Makefiles",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "VCPKG_TARGET_TRIPLET": "wasm32-emscripten",
+        "VCPKG_CHAINLOAD_TOOLCHAIN_FILE": "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake"
+      }
+    }
+  ]
+}

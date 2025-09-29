@@ -1,5 +1,6 @@
 #pragma once
 #include <memory>
+#include <thread>
 
 #include <video/Deleters.hpp>
 #include <video/Deque.hpp>
@@ -22,7 +23,7 @@ protected:
     AVRational timeBase;
 
     static int DecoderThread(void* userdata);
-    std::unique_ptr<SDL_Thread,SDL_ThreadDeleter> decoderThread;
+    std::jthread decoderThread;
 
     virtual void CreateThreads() = 0;
 public:

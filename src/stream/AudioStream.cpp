@@ -53,10 +53,12 @@ void AudioStream::InitializeSwrContext() {
 }
 
 void AudioStream::CreateThreads() {
-    string name = format("Audio decoder {}", streamIndex);
-    string name2 = format("Audio consumer {}", streamIndex);
-    decoderThread = unique_ptr<SDL_Thread, SDL_ThreadDeleter>(SDL_CreateThread(Stream::DecoderThread, name.c_str(), (void*)this));
-    audioConsumer = unique_ptr<SDL_Thread, SDL_ThreadDeleter>(SDL_CreateThread(AudioStream::AudioConsumerThreadWrapper, name2.c_str(), (void*)this));
+    decoderThread = std::jthread(Stream::DecoderThread, (void*)this);
+    decoderThread.detach();
+
+    audioConsumer = std::jthread(AudioStream::AudioConsumerThreadWrapper, (void*)this);
+    audioConsumer.detach();
+
 }
 
 void AudioStream::Flush() {

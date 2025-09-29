@@ -8,7 +8,7 @@ private:
     SDL_AudioSpec audioSpec;
     SDL_AudioSpec outputAudioSpec;
     std::unique_ptr<SDL_AudioStream, SDL_AudioStreamDeleter> sdlAudioStream;
-    std::unique_ptr<SDL_Thread, SDL_ThreadDeleter> audioConsumer;
+    std::jthread audioConsumer;
 
     double diff{0};
     uint32_t diffCount{0};

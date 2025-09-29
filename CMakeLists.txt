@@ -6,13 +6,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
-if(MSVC)
-  add_compile_options(/W4)
-else()
-  add_compile_options(-Wall -Wextra -Wpedantic -Werror)
-endif()
-
-
 find_package(SDL3 REQUIRED CONFIG REQUIRED COMPONENTS SDL3)
 
 find_path(AVCODEC_INCLUDE_DIR NAMES libavcodec/avcodec.h REQUIRED)
@@ -32,6 +25,13 @@ find_library(SWRESAMPLE_LIBRARY NAMES swresample REQUIRED)
 
 
 add_subdirectory(external/imgui)
+
+if(MSVC)
+  add_compile_options(/W4)
+else()
+  add_compile_options(-Wall -Wextra -Wpedantic -Werror)
+endif()
+
 add_subdirectory(src)
 
 

@@ -1,5 +1,6 @@
 #pragma once
 #include <SDL3/SDL.h>
+#include <thread>
 #include <atomic>
 #include <memory>
 #include <queue>
@@ -47,7 +48,7 @@ private:
 
     std::unique_ptr<SDL_Texture, SDL_TextureDeleter> texture;
 
-    std::unique_ptr<SDL_Thread, SDL_ThreadDeleter> packageReader;
+    std::jthread packageReader;
 
     Clock clock;
 
