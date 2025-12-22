@@ -1,8 +1,9 @@
 set(PROJECT_SOURCES
     basic/Clock.cpp
-    basic/EventHandler.cpp
     basic/GuiHandler.cpp
-    basic/Player.cpp
+    core/Application.cpp
+    core/Layer.cpp
+    core/Window.cpp
     stream/AudioStream.cpp
     stream/Stream.cpp
     stream/VideoStream.cpp

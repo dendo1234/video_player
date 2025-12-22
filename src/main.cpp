@@ -1,30 +1,35 @@
 #define SDL_MAIN_USE_CALLBACKS
 #include <SDL3/SDL_main.h>
-#include "basic/Player.hpp"
 #include "backends/imgui_impl_sdl3.h"
+#include "core/Application.hpp"
+#include "core/Event.hpp"
+#include "video/Video.hpp"
 
 SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]] int argc, [[maybe_unused]] char **argv) {
-    SDL_SetHint(SDL_HINT_LOGGING, "info");
-    // SDL_SetLogPriorities(SDL_LOG_PRIORITY_VERBOSE);
-    SDL_Init(SDL_INIT_AUDIO);
+    ApplicationSpecs specs = {
+        .windowSpecs = {
+            .title = "Video Player",
+            .w = 640,
+            .h = 360,
+        }
+    };
+    Application* app = new Application(specs);
 
-    Player* player = new Player();
-    *appstate = player;
+    app->CreateLayer<Video>("input3.mkv");
+
+
+    *appstate = app;
 
     return SDL_APP_CONTINUE;
 };
 
 SDL_AppResult SDL_AppIterate(void *appstate) {
-    Player* player = static_cast<Player*>(appstate);
+    Application* app = static_cast<Application*>(appstate);
 
     static const uint64_t FRAME_TIME = 16666667;
     uint64_t frameStart = SDL_GetTicksNS();
 
-    uint64_t dt = player->DeltaTime();
-
-    player->video.Update(dt);
-
-    player->Render();
+    app->Iterate();
 
     uint64_t frameTime = SDL_GetTicksNS() - frameStart;
     if (frameTime < FRAME_TIME) {
@@ -35,13 +40,25 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 };
 
 SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
-    Player* player = static_cast<Player*>(appstate);
-    return player->eventHandler.ProcessEvent(event);
+    Event e(event);
+    Application* app = static_cast<Application*>(appstate);
+    EventResult result = app->RaiseEvent(e);
 
+    switch (result) {
+        case Continue:
+        case Break:
+            return SDL_APP_CONTINUE;
+        case TerminateSucess:
+            return SDL_APP_SUCCESS;
+        case TerminateError:
+            return SDL_APP_FAILURE;
+        default:
+            assert(false);
+    }
 };
 
 void SDL_AppQuit(void *appstate, [[maybe_unused]] SDL_AppResult result) {
-    delete static_cast<Player*>(appstate);
+    delete static_cast<Application*>(appstate);
 
     return;
 };

@@ -13,6 +13,7 @@
 #include <video/MediaFile.hpp>
 #include <stream/VideoStream.hpp>
 #include <stream/AudioStream.hpp>
+#include <core/Layer.hpp>
 
 extern "C" {
 #include "libavcodec/avcodec.h"
@@ -35,12 +36,10 @@ struct ReadPacketReturn {
 
 class Player; // "basic/Player.hpp"
 
-class Video {
+class Video : public Layer {
 public:
     bool m_videoDone{false};
 private:
-    Player& player;
-
     MediaFile mediaFile;
     VideoStream videoStream;
     SDL_AudioDeviceID m_audioDevideID{0};
@@ -77,7 +76,7 @@ public:
         double delta;
     } seekInterface;
 
-    Video(const char* filename, Player& player);
+    Video(const Layer& layer, const char* filename);
     ~Video();
 
     int GetVideoWidth();
@@ -88,9 +87,8 @@ public:
     void RequestSeek(double targetTimestamp, double delta = 0);
     void TogglePause();
 
-    void Render() const;
-    void Update(uint64_t dt);
-    void Start();
+    void OnRender() override;
+    void OnUpdate(double dt) override;
     void GuiPass();
 
 };

@@ -1,5 +1,4 @@
 #include <video/Video.hpp>
-#include <basic/Player.hpp>
 
 extern "C" {
 #include "libavcodec/avcodec.h"
@@ -138,14 +137,18 @@ std::vector<AudioStream> Video::InitializeAudioStreams() {
 }
 
 
-Video::Video(const char* filename, Player& player)
-    : player{player},
-    mediaFile(filename),
+Video::Video(const Layer& layer, const char* filename)
+    : Layer{layer},
+      mediaFile(filename),
     videoStream{InitializeVideoStream()},
     m_audioDevideID{SDL_OpenAudioDevice(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, nullptr)},
     audioStreams{InitializeAudioStreams()} {
     
-    texture = unique_ptr<SDL_Texture, SDL_TextureDeleter>(SDL_CreateTexture(player.renderer.get(), SDL_PIXELFORMAT_YV12, SDL_TEXTUREACCESS_STREAMING, videoStream.GetWidth(), videoStream.GetHeight()));
+    texture = windowTarget->CreateTexture(SDL_PIXELFORMAT_YV12, SDL_TEXTUREACCESS_STREAMING, videoStream.GetWidth(), videoStream.GetHeight());
+    SDL_Texture* previousTarget = SDL_GetRenderTarget(windowTarget->GetRenderer());
+    SDL_SetRenderTarget(windowTarget->GetRenderer(), texture.get());
+    SDL_SetRenderLogicalPresentation(windowTarget->GetRenderer(), videoStream.GetWidth(), videoStream.GetHeight(), SDL_RendererLogicalPresentation::SDL_LOGICAL_PRESENTATION_LETTERBOX);
+    SDL_SetRenderTarget(windowTarget->GetRenderer(), previousTarget);
 
     InitializeThreads();
 
@@ -171,10 +174,6 @@ void Video::FlushStreams() {
     for (auto &&audioStream : audioStreams) {
         audioStream.Flush();
     }
-}
-
-void Video::Start() {
-    m_startTick = SDL_GetTicks();
 }
 
 int Video::GetVideoWidth() {
@@ -232,12 +231,12 @@ void Video::GuiPass() {
     ImGui::End();
 }
 
-void Video::Update(uint64_t dt) {
+void Video::OnUpdate(double dt) {
     if (m_videoDone == true) {
         return;
     }
 
-    clock.UpdateDt(dt/1e9);
+    clock.UpdateDt(dt);
 
 
     std::unique_ptr<AVFrame,AVFrameDeleter> frame = videoStream.GetFrameBeforePts(static_cast<int64_t>(GetSyncClock() / av_q2d(videoStream.GetTimeBase())));
@@ -257,8 +256,8 @@ void Video::Update(uint64_t dt) {
     } 
 }
 
-void Video::Render() const {
-    bool lastError = SDL_RenderTexture(player.renderer.get(), texture.get(), nullptr, nullptr);
+void Video::OnRender() {
+    bool lastError = SDL_RenderTexture(windowTarget->GetRenderer(), texture.get(), nullptr, nullptr);
     if (lastError == false) {
         SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Error rendering video texture: %s", SDL_GetError());
     }
