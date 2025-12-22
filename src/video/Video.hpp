@@ -89,6 +89,7 @@ public:
 
     void OnRender() override;
     void OnUpdate(double dt) override;
+    EventResult OnEvent(const Event& event) override;
     void GuiPass();
 
 };

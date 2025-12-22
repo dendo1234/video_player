@@ -262,3 +262,32 @@ void Video::OnRender() {
         SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Error rendering video texture: %s", SDL_GetError());
     }
 }
+
+EventResult Video::OnEvent(const Event& event) {
+
+    switch (event.sdl_event->type)
+    {
+    case SDL_EVENT_KEY_DOWN: {
+        SDL_KeyboardEvent& keyEvent = event.sdl_event->key;
+        switch (keyEvent.key) {
+        case SDLK_RIGHT:
+            RequestSeek(GetSyncClock() + 5, 5);
+            break;
+        case SDLK_LEFT:
+            RequestSeek(GetSyncClock() - 5, -5);
+            break;
+        case SDLK_L:
+            RequestSeek(GetSyncClock() + 10, 10);
+            break;
+        case SDLK_J:
+            RequestSeek(GetSyncClock() - 10, -10);
+            break;
+        case SDLK_SPACE:
+            TogglePause();
+        default:
+            break;
+        }
+    }
+    }
+    return EventResult::Continue;
+}

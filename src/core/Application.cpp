@@ -57,6 +57,14 @@ Application& Application::Get() {
 
 
 EventResult Application::RaiseEvent(Event& event) {
+    switch (event.sdl_event->type)
+    {
+    case SDL_EVENT_QUIT:
+        return EventResult::TerminateSucess;
+    default:
+        break;
+    }
+
     for (auto&& layer : layerStack | std::views::reverse) {
         auto result = layer->OnEvent(event);
         if (result != EventResult::Continue) {
