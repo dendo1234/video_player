@@ -2,6 +2,7 @@
 #include <SDL3/SDL.h>
 #include <video/Deleters.hpp>
 #include <memory>
+#include <string>
 
 
 inline auto SDL_WindowDeleter = [](SDL_Window* ptr) {
