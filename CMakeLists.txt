@@ -24,8 +24,6 @@ find_path(SWRESAMPLE_INCLUDE_DIR NAMES libswresample/swresample.h REQUIRED)
 find_library(SWRESAMPLE_LIBRARY NAMES swresample REQUIRED)
 
 
-add_subdirectory(external/imgui)
-
 if(MSVC)
   add_compile_options(/W4)
 else()

@@ -18,7 +18,6 @@ add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
 target_include_directories(${PROJECT_NAME}
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
-        $<TARGET_PROPERTY:DearImGui,INCLUDE_DIRECTORIES>
         ${AVCODEC_INCLUDE_DIR}
         ${AVFORMAT_INCLUDE_DIR}
         ${AVUTIL_INCLUDE_DIR}
@@ -28,7 +27,6 @@ target_include_directories(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
-        DearImGui
         SDL3::SDL3
         ${AVFORMAT_LIBRARY}
         ${AVCODEC_LIBRARY}

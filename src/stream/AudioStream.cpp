@@ -1,7 +1,6 @@
 #include <stream/AudioStream.hpp>
 #include <video/Video.hpp>
 #include <format>
-#include "imgui.h"
 
 using namespace std;
 
@@ -66,7 +65,7 @@ void AudioStream::Flush() {
 }
 
 void AudioStream::GuiPass() {
-    ImGui::Text("AudioStream %d diff: %f", streamIndex, diff);
+
 }
 
 SDL_AudioSpec AudioStream::GetSourceAudioFormat() {

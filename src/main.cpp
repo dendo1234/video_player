@@ -1,9 +1,9 @@
 #define SDL_MAIN_USE_CALLBACKS
 #include <SDL3/SDL_main.h>
-#include "backends/imgui_impl_sdl3.h"
 #include "core/Application.hpp"
 #include "core/Event.hpp"
 #include "video/Video.hpp"
+#include <cassert>
 
 SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]] int argc, [[maybe_unused]] char **argv) {
     ApplicationSpecs specs = {

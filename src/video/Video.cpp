@@ -8,8 +8,6 @@ extern "C" {
 #include "libswresample/swresample.h"
 }
 
-#include "imgui.h"
-
 using namespace std;
 
 
@@ -203,32 +201,7 @@ void Video::TogglePause() {
 }
 
 void Video::GuiPass() {
-    ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
-    window_flags |= ImGuiWindowFlags_NoMove;
 
-    float PAD = 20;
-    const ImGuiViewport* viewport = ImGui::GetMainViewport();
-    ImVec2 work_pos = viewport->WorkPos; // Use work area to avoid menu-bar/task-bar, if any!
-    ImVec2 work_size = viewport->WorkSize;
-    ImVec2 window_pos;
-    window_pos.x = 0;
-    window_pos.y = (work_pos.y + work_size.y - PAD);
-
-    ImGui::SetNextWindowPos(window_pos);
-    ImGui::SetNextWindowSize(work_size);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-
-    ImGui::SetNextWindowBgAlpha(0.35f); // Transparent background
-    if (ImGui::Begin("Debug Overlay", nullptr, window_flags)) {
-        ImGui::PopStyleVar();
-        float shownTime = clock.GetTime();
-        ImGui::SetNextItemWidth(ImGui::GetWindowWidth());
-        if (ImGui::SliderFloat("Clock", &shownTime, 0, mediaFile.GetDuration())) {
-            RequestSeek(shownTime, 0);
-        }
-    }
-
-    ImGui::End();
 }
 
 void Video::OnUpdate(double dt) {
