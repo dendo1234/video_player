@@ -28,6 +28,8 @@ public:
     Window(const WindowSpecs& specs);
     void SwapBuffers();
     void SetRenderTargetSelf();
+    void GetWindowSize(int& w, int& h);
+    void GetMousePosition(float& x, float& y);
     std::unique_ptr<SDL_Texture, SDL_TextureDeleter> CreateTexture(SDL_PixelFormat pixelFormat, SDL_TextureAccess textureAccess, int w, int h);
     SDL_Renderer* GetRenderer();
 

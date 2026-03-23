@@ -21,6 +21,14 @@ std::unique_ptr<SDL_Texture, SDL_TextureDeleter> Window::CreateTexture(SDL_Pixel
     return std::unique_ptr<SDL_Texture, SDL_TextureDeleter>(SDL_CreateTexture(renderer.get(), pixelFormat, textureAccess, w, h));
 }
 
+void Window::GetWindowSize(int& w, int& h) {
+    SDL_GetWindowSize(ptr.get(), &w, &h);
+}
+
+void Window::GetMousePosition(float& x, float& y) {
+    SDL_GetMouseState(&x, &y);
+}
+
 SDL_Renderer* Window::GetRenderer() {
     assert(renderer);
     return renderer.get();

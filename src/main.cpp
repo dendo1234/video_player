@@ -5,6 +5,10 @@
 #include "video/Video.hpp"
 #include <cassert>
 
+#include "ui/ClayInit.hpp"
+
+char* clayMemory;
+
 SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]] int argc, [[maybe_unused]] char **argv) {
     ApplicationSpecs specs = {
         .windowSpecs = {
@@ -19,6 +23,9 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]] int argc, [[maybe_un
 
 
     *appstate = app;
+
+    clayMemory = ClayInit();
+
 
     return SDL_APP_CONTINUE;
 };
@@ -59,6 +66,7 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
 
 void SDL_AppQuit(void *appstate, [[maybe_unused]] SDL_AppResult result) {
     delete static_cast<Application*>(appstate);
+    ClayDestructor(clayMemory);
 
     return;
 };

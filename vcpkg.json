@@ -1,6 +1,7 @@
 {
   "dependencies": [
+    "ffmpeg",
     "sdl3",
-    "ffmpeg"
+    "clay"
   ]
 }
