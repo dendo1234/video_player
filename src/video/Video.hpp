@@ -56,6 +56,9 @@ private:
     std::vector<AudioStream> InitializeAudioStreams();
     void InitializeThreads();
 
+    SDL_FRect CalculateDstBox();
+    SDL_FRect dstBox{CalculateDstBox()};
+
     void FlushStreams();
 
     // Should only be called on the PacketReader Thread
@@ -91,6 +94,8 @@ public:
     void OnUpdate(double dt) override;
     EventResult OnEvent(const Event& event) override;
     void GuiPass();
+
+    double GetPlaybackPercentage();
 
 };
 

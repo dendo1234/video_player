@@ -7,6 +7,8 @@ set(PROJECT_SOURCES
     stream/AudioStream.cpp
     stream/Stream.cpp
     stream/VideoStream.cpp
+    ui/VideoUI.cpp
+    ui/layout.c
     video/Deque.cpp
     video/MediaFile.cpp
     video/Video.cpp
@@ -15,10 +17,31 @@ set(PROJECT_SOURCES
 
 add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
 
+if(NOT PRESET_NAME)
+    set(PRESET_NAME "")
+else()
+    set(PRESET_NAME "-${PRESET_NAME}")
+endif()
+
+set_target_properties(${PROJECT_NAME} PROPERTIES 
+    OUTPUT_NAME "${PROJECT_NAME}${PRESET_NAME}"
+)
+
+if(MSVC)
+  target_compile_options(${PROJECT_NAME} PUBLIC /W4)
+  set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/ui/VideoUI.cpp
+      PROPERTIES COMPILE_OPTIONS "/wd26495"
+  )
+else()
+  target_compile_options(${PROJECT_NAME} PUBLIC -Wall -Wextra -Wpedantic -Werror)
+  set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/ui/VideoUI.cpp
+      PROPERTIES COMPILE_OPTIONS "-Wno-missing-field-initializers"
+  )
+endif()
+
 target_include_directories(${PROJECT_NAME}
-    PUBLIC
+    PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
-        ${CLAY_INCLUDE_DIRS}
         ${AVCODEC_INCLUDE_DIR}
         ${AVFORMAT_INCLUDE_DIR}
         ${AVUTIL_INCLUDE_DIR}
@@ -29,6 +52,8 @@ target_include_directories(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
         SDL3::SDL3
+        SDL3_ttf::SDL3_ttf
+        Clay
         ${AVFORMAT_LIBRARY}
         ${AVCODEC_LIBRARY}
         ${AVUTIL_LIBRARY}

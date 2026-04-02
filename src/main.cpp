@@ -3,6 +3,7 @@
 #include "core/Application.hpp"
 #include "core/Event.hpp"
 #include "video/Video.hpp"
+#include "ui/VideoUI.hpp"
 #include <cassert>
 
 #include "ui/ClayInit.hpp"
@@ -18,13 +19,12 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]] int argc, [[maybe_un
         }
     };
     Application* app = new Application(specs);
-
-    app->CreateLayer<Video>("input3.mkv");
-
-
     *appstate = app;
 
     clayMemory = ClayInit();
+
+    Video* video = app->CreateLayer<Video>("F:/Users/dendo/Videos/24-10-19 01-52-04 r.mkv");
+    app->CreateLayer<VideoUI>(video);
 
 
     return SDL_APP_CONTINUE;

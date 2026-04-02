@@ -204,6 +204,10 @@ void Video::GuiPass() {
 
 }
 
+double Video::GetPlaybackPercentage() {
+    return clock.GetTime()/mediaFile.GetDuration();
+}
+
 void Video::OnUpdate(double dt) {
     if (m_videoDone == true) {
         return;
@@ -229,8 +233,45 @@ void Video::OnUpdate(double dt) {
     } 
 }
 
+SDL_FRect Video::CalculateDstBox() {
+    int windowWidth;
+    int windowHeight;
+    windowTarget->GetWindowSize(windowWidth, windowHeight);
+
+    // todo: get from somewhere else
+    int videoUIHeight = 18;
+
+    windowHeight -= videoUIHeight;
+
+    int videoWidth = videoStream.GetWidth();
+    int videoHeight = videoStream.GetHeight();
+
+    float videoAspect = static_cast<float>(videoWidth)/videoHeight;
+    float windowAspect = static_cast<float>(windowWidth)/windowHeight;
+
+    //case 1: window aspect is bigger:
+    if (windowAspect > videoAspect) {
+        // blackbars on the left/right
+        float w = videoAspect*windowHeight;
+        return SDL_FRect{
+            .x = (windowWidth-w)/2,
+            .y = 0.0f,
+            .w = w,
+            .h = static_cast<float>(windowHeight)
+        };
+    } else {
+        float h = 1/videoAspect*windowWidth;
+        return SDL_FRect {
+            .x = 0.0f,
+            .y = (windowHeight-h)/2,
+            .w = static_cast<float>(windowWidth),
+            .h = h
+        };
+    }
+}
+
 void Video::OnRender() {
-    bool lastError = SDL_RenderTexture(windowTarget->GetRenderer(), texture.get(), nullptr, nullptr);
+    bool lastError = SDL_RenderTexture(windowTarget->GetRenderer(), texture.get(), nullptr, &dstBox);
     if (lastError == false) {
         SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Error rendering video texture: %s", SDL_GetError());
     }
@@ -240,6 +281,10 @@ EventResult Video::OnEvent(const Event& event) {
 
     switch (event.sdl_event->type)
     {
+    case SDL_EVENT_WINDOW_RESIZED: {
+        dstBox = CalculateDstBox();
+        break;
+    }
     case SDL_EVENT_KEY_DOWN: {
         SDL_KeyboardEvent& keyEvent = event.sdl_event->key;
         switch (keyEvent.key) {

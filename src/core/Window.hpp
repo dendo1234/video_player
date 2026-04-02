@@ -26,6 +26,7 @@ private:
 
 public:
     Window(const WindowSpecs& specs);
+    void Clear();
     void SwapBuffers();
     void SetRenderTargetSelf();
     void GetWindowSize(int& w, int& h);

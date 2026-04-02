@@ -34,6 +34,7 @@ void Application::Iterate() {
 
     for (auto&& window : windows) {
         window->SetRenderTargetSelf();
+        window->Clear();
         for (auto&& layer : layerStack) {
             if (layer->windowTarget == window) {
                 layer->OnRender();

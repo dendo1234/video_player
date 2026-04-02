@@ -3,7 +3,10 @@
   "configurePresets": [
     {
       "name": "default",
-      "binaryDir": "${sourceDir}/build/${presetName}"
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "PRESET_NAME": "${presetName}"
+      }
     },
     {
       "name": "vcpkg",

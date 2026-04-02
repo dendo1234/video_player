@@ -38,3 +38,7 @@ void Window::SwapBuffers() {
     SDL_RenderPresent(renderer.get());
 }
 
+void Window::Clear() {
+    SDL_SetRenderDrawColor(renderer.get(), 20, 0, 20, 255);
+    SDL_RenderClear(renderer.get());
+}
