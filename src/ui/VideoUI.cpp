@@ -12,6 +12,20 @@ const Clay_Color COLOR_GREEN = Clay_Color{0, 255, 0, 255};
 const Clay_Color COLOR_ORANGE = Clay_Color{225, 138, 50, 255};
 const Clay_Color COLOR_TRANSPARENT = Clay_Color{0, 0, 0, 0};
 
+void ProgressBarClick([[maybe_unused]] Clay_ElementId elementId, Clay_PointerData pointerData, intptr_t userData) {
+    VideoUI* videoUI = (VideoUI*)userData;
+    if (pointerData.state == CLAY_POINTER_DATA_PRESSED) {
+        int w, h;
+        videoUI->windowTarget->GetWindowSize(w, h);
+
+        double percentage = static_cast<double>(pointerData.position.x)/w;
+
+        double timestamp = videoUI->video.ConvertPercentageToTimestamp(percentage);
+        
+        videoUI->video.RequestSeek(timestamp);
+    }
+}
+
 Clay_RenderCommandArray VideoUI::BuildLayout() const {
     Clay_LayoutConfig rootLayout = { 
         .sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_GROW(0) },
@@ -33,6 +47,7 @@ Clay_RenderCommandArray VideoUI::BuildLayout() const {
                 .width = CLAY_BORDER_ALL(1)
             }
         }) {
+            Clay_OnHover(ProgressBarClick, (intptr_t)this);
             CLAY({
                 .layout = {
                     .sizing = { .width = CLAY_SIZING_PERCENT(progressPercentage), .height = CLAY_SIZING_GROW() }
@@ -45,7 +60,7 @@ Clay_RenderCommandArray VideoUI::BuildLayout() const {
     return Clay_EndLayout();
 }
 
-VideoUI::VideoUI(const Layer& layer, Video* video)
+VideoUI::VideoUI(const Layer& layer, Video& video)
     : Layer{layer},
       video{video} {
 
@@ -71,7 +86,7 @@ void VideoUI::OnRender() {
         .x = mousePositionX,
         .y = mousePositionY
     };
-    Clay_SetPointerState(mousePos, false);
+    Clay_SetPointerState(mousePos, mouse1Pressed);
     // Optional: Update internal pointer position for handling mouseover / click / touch events - needed for scrolling and debug tools
     // Clay_UpdateScrollContainers(true, (Clay_Vector2) { mouseWheelX, mouseWheelY }, deltaTime);
 
@@ -90,11 +105,24 @@ void VideoUI::OnRender() {
 void VideoUI::OnUpdate(double dt) {
     auto _ = dt;
 
-    progressPercentage = video->GetPlaybackPercentage();
+    progressPercentage = video.GetPlaybackPercentage();
 }
 
 EventResult VideoUI::OnEvent(const Event& event) {
-    auto _ = event;
+    switch (event.sdl_event->type)
+    {
+    case SDL_EVENT_MOUSE_BUTTON_DOWN:
+        if (event.sdl_event->button.button == 1) {
+            mouse1Pressed = true;
+        }
+        break;
+    case SDL_EVENT_MOUSE_BUTTON_UP:
+        if (event.sdl_event->button.button == 1) {
+            mouse1Pressed = false;
+        }
+        break;  
+    default:
+        break;
+    }
     return EventResult::Continue;
-
 }

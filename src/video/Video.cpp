@@ -204,8 +204,12 @@ void Video::GuiPass() {
 
 }
 
-double Video::GetPlaybackPercentage() {
+double Video::GetPlaybackPercentage() const {
     return clock.GetTime()/mediaFile.GetDuration();
+}
+
+double Video::ConvertPercentageToTimestamp(double percentage) const {
+    return percentage*mediaFile.GetDuration();
 }
 
 void Video::OnUpdate(double dt) {

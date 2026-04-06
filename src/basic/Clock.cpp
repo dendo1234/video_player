@@ -15,7 +15,7 @@ Clock::~Clock() {
 
 }
 
-double Clock::GetTime() {
+double Clock::GetTime() const {
     uint64_t currentTime = SDL_GetTicksNS();
     // Race condition can make updated_at be bigger than currentTime. Because of that "underflow" could happen. int64_t avoids that
     int64_t timeDiff = !paused && !seeking ? currentTime - updated_at : 0;

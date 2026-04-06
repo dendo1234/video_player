@@ -95,7 +95,8 @@ public:
     EventResult OnEvent(const Event& event) override;
     void GuiPass();
 
-    double GetPlaybackPercentage();
+    double GetPlaybackPercentage() const;
+    double ConvertPercentageToTimestamp(double percentage) const;
 
 };
 

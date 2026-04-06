@@ -14,7 +14,7 @@ public:
     Clock(double time);
     ~Clock();
 
-    double GetTime();
+    double GetTime() const;
     void UpdateDt(double dt);
     void UpdateTime(double newTime);
     void SetPaused(bool paused);

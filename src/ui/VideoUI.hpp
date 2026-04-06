@@ -6,11 +6,12 @@
 class VideoUI : public Layer {
 private:
     float progressPercentage{0};
-    Video* video{nullptr};
+    Video& video;
     Clay_RenderCommandArray BuildLayout() const;
+    bool mouse1Pressed{false};
 
 public:
-    VideoUI(const Layer& layer, Video* video);
+    VideoUI(const Layer& layer, Video& video);
 
     void OnRender() override;
     void OnUpdate(double dt) override;
@@ -18,5 +19,6 @@ public:
 
     void SetProgressPercentage(float percentage);
 
+    friend void ProgressBarClick(Clay_ElementId elementId, Clay_PointerData pointerData, intptr_t userData);
 };
 

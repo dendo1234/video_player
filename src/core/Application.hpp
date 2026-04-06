@@ -25,10 +25,10 @@ public:
     ~Application();
 
     template<IsLayer layer, typename... Args>
-    layer* CreateLayer(Args&&... args) {
+    layer& CreateLayer(Args&&... args) {
         Layer base(windows[0]);
-        auto l = std::make_unique<layer>(base, std::forward<Args>(args)...);
-        layer* ptr = l.get();
+        std::unique_ptr<layer> l = std::make_unique<layer>(base, std::forward<Args>(args)...);
+        layer& ptr = *l;
         layerStack.push_back(std::move(l));
 
         return ptr;

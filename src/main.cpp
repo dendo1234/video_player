@@ -23,7 +23,7 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]] int argc, [[maybe_un
 
     clayMemory = ClayInit();
 
-    Video* video = app->CreateLayer<Video>("F:/Users/dendo/Videos/24-10-19 01-52-04 r.mkv");
+    Video& video = app->CreateLayer<Video>("F:/Users/dendo/Videos/24-10-19 01-52-04 r.mkv");
     app->CreateLayer<VideoUI>(video);
 
 
