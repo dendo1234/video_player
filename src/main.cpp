@@ -11,6 +11,17 @@
 char* clayMemory;
 
 SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]] int argc, [[maybe_unused]] char **argv) {
+    const char* filename;
+    if (argc == 1) {
+        SDL_Log("usage: masvp <filename>");
+        return SDL_APP_SUCCESS;
+    } else if (argc == 2) {
+        filename = argv[1];
+    } else {
+        printf("unexped number of arguments");
+        return SDL_APP_FAILURE;
+    }
+
     ApplicationSpecs specs = {
         .windowSpecs = {
             .title = "Video Player",
@@ -23,7 +34,7 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]] int argc, [[maybe_un
 
     clayMemory = ClayInit();
 
-    Video& video = app->CreateLayer<Video>("F:/Users/dendo/Videos/24-10-19 01-52-04 r.mkv");
+    Video& video = app->CreateLayer<Video>(filename);
     app->CreateLayer<VideoUI>(video);
 
 

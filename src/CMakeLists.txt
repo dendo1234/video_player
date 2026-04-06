@@ -14,7 +14,7 @@ set(PROJECT_SOURCES
     main.cpp
 )
 
-add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
+add_executable(${PROJECT_NAME} WIN32 ${PROJECT_SOURCES})
 
 if(NOT PRESET_NAME)
     set(PRESET_NAME "")
