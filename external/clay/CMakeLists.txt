@@ -2,7 +2,7 @@
 
 find_package(SDL3 REQUIRED CONFIG REQUIRED COMPONENTS SDL3)
 
-add_library(Clay STATIC clay_impl.c ${CMAKE_CURRENT_SOURCE_DIR}/renderers/SDL3/clay_renderer_SDL3.c)
+add_library(Clay STATIC clay_impl.cpp ${CMAKE_CURRENT_SOURCE_DIR}/renderers/SDL3/clay_renderer_SDL3.cpp)
 
 target_include_directories(Clay 
     PUBLIC 

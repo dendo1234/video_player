@@ -1,12 +1,13 @@
 #include <core/Layer.hpp>
 #include <video/Video.hpp>
-
+#include <clay.h>
 
 
 class VideoUI : public Layer {
 private:
     float progressPercentage{0};
     Video* video{nullptr};
+    Clay_RenderCommandArray BuildLayout() const;
 
 public:
     VideoUI(const Layer& layer, Video* video);

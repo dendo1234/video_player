@@ -8,7 +8,6 @@ set(PROJECT_SOURCES
     stream/Stream.cpp
     stream/VideoStream.cpp
     ui/VideoUI.cpp
-    ui/layout.c
     video/Deque.cpp
     video/MediaFile.cpp
     video/Video.cpp

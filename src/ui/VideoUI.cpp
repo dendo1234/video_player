@@ -1,7 +1,6 @@
 #include <ui/VideoUI.hpp>
 #include <clay.h>
 #include <clay_renderer_SDL3.h>
-#include <ui/layout.h>
 
 // Please note: -Wmissing-field-initializers is disabled for this file for making it less boilerplate to the the UI.
 
@@ -12,6 +11,39 @@ const Clay_Color COLOR_RED = Clay_Color{168, 66, 28, 255};
 const Clay_Color COLOR_GREEN = Clay_Color{0, 255, 0, 255};
 const Clay_Color COLOR_ORANGE = Clay_Color{225, 138, 50, 255};
 const Clay_Color COLOR_TRANSPARENT = Clay_Color{0, 0, 0, 0};
+
+Clay_RenderCommandArray VideoUI::BuildLayout() const {
+    Clay_LayoutConfig rootLayout = { 
+        .sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_GROW(0) },
+        .childAlignment = {
+            .y = CLAY_ALIGN_Y_BOTTOM
+        },
+    };
+
+    Clay_BeginLayout(); 
+    CLAY({ .layout = rootLayout, .backgroundColor = {255,255,255,0} }) {
+        CLAY({
+            .id = CLAY_ID("Playback progress bar"),
+            .layout = {
+                .sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_FIXED(18) },
+            },
+            .backgroundColor = COLOR_WHITE,
+            .border = {
+                .color = COLOR_BLACK,
+                .width = CLAY_BORDER_ALL(1)
+            }
+        }) {
+            CLAY({
+                .layout = {
+                    .sizing = { .width = CLAY_SIZING_PERCENT(progressPercentage), .height = CLAY_SIZING_GROW() }
+                },
+                .backgroundColor = COLOR_GREEN,
+            }) {}
+        }
+    }
+
+    return Clay_EndLayout();
+}
 
 VideoUI::VideoUI(const Layer& layer, Video* video)
     : Layer{layer},
@@ -43,16 +75,7 @@ void VideoUI::OnRender() {
     // Optional: Update internal pointer position for handling mouseover / click / touch events - needed for scrolling and debug tools
     // Clay_UpdateScrollContainers(true, (Clay_Vector2) { mouseWheelX, mouseWheelY }, deltaTime);
 
-    // Clay_LayoutConfig rootLayout = Clay_LayoutConfig { 
-    //     .sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_GROW(0) },
-    //     .childAlignment = {
-    //         .y = Clay_LayoutAlignmentY::CLAY_ALIGN_Y_BOTTOM
-    //     },
-    // };
-
-    Clay_RenderCommandArray renderCommands;
-
-    layout(&renderCommands, progressPercentage);
+    Clay_RenderCommandArray renderCommands = BuildLayout();
 
     Clay_SDL3RendererData data = {
         .renderer = windowTarget->GetRenderer(),
