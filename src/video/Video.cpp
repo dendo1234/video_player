@@ -86,7 +86,42 @@ int Video::PacketReaderThread(void* userdata) {
     return 0;
 }
 
+AVPixelFormat GetFormat([[maybe_unused]] AVCodecContext *s, const AVPixelFormat * fmt) {
+    auto _ = fmt;
+    return AV_PIX_FMT_VULKAN;
+}
+
+void Video::TryHardwareDecode(const AVCodec* codec, AVCodecContext* context) {
+    AVHWDeviceType type = AV_HWDEVICE_TYPE_VULKAN;
+
+    for (int i = 0;;i++) {
+        const AVCodecHWConfig* hwconfig = avcodec_get_hw_config(codec, i);
+        if (hwconfig == nullptr) {
+            SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Error codec does not support hardware decode");
+            return;
+        }
+
+        if (hwconfig->methods & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX &&
+            hwconfig->device_type == type) {
+            auto _ = hwconfig->pix_fmt;
+            break;
+        }
+    }
+
+    AVBufferRef* ref;
+    int lastError = av_hwdevice_ctx_create(&ref, AV_HWDEVICE_TYPE_VULKAN, nullptr, nullptr, 0);
+    if (lastError < 0) {
+        char buffer[AV_ERROR_MAX_STRING_SIZE];
+        av_make_error_string(buffer, AV_ERROR_MAX_STRING_SIZE, lastError);
+        SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Error codec: %s", buffer);
+    }
+
+    context->get_format = GetFormat;
+    context->hw_device_ctx = av_buffer_ref(ref);
+}
+
 unique_ptr<AVCodecContext, AVCodecContextDeleter> Video::InitializeDecoder(int streamIndex) {
+    int lastError;
     const AVCodecParameters* parameters = mediaFile.GetCodecParameters(streamIndex);
 
     const AVCodec* codec = avcodec_find_decoder(parameters->codec_id);
@@ -101,12 +136,14 @@ unique_ptr<AVCodecContext, AVCodecContextDeleter> Video::InitializeDecoder(int s
 
     unique_ptr<AVCodecContext, AVCodecContextDeleter> context(avCodecContexRaw);
 
-    int lastError = avcodec_parameters_to_context(context.get(), parameters);
+    lastError = avcodec_parameters_to_context(context.get(), parameters);
     if (lastError < 0) {
         char buffer[AV_ERROR_MAX_STRING_SIZE];
         av_make_error_string(buffer, AV_ERROR_MAX_STRING_SIZE, lastError);
         SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Error codec: %s", buffer);
     }
+
+    // TryHardwareDecode(codec, context.get());
 
     lastError = avcodec_open2(context.get(), codec, nullptr);
     if (lastError < 0) {

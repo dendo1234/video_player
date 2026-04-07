@@ -1,6 +1,9 @@
 {
   "dependencies": [
-    "ffmpeg",
+    {
+      "name": "ffmpeg",
+      "features": ["vulkan"]
+    },
     "sdl3",
     "sdl3-ttf"
   ]

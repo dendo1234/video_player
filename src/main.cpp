@@ -8,7 +8,7 @@
 
 #include "ui/ClayInit.hpp"
 
-char* clayMemory;
+char* clayMemory{nullptr};
 
 SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]] int argc, [[maybe_unused]] char **argv) {
     const char* filename;
@@ -18,7 +18,7 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]] int argc, [[maybe_un
     } else if (argc == 2) {
         filename = argv[1];
     } else {
-        printf("unexped number of arguments");
+        SDL_Log("unexped number of arguments");
         return SDL_APP_FAILURE;
     }
 
@@ -78,6 +78,7 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
 
 void SDL_AppQuit(void *appstate, [[maybe_unused]] SDL_AppResult result) {
     delete static_cast<Application*>(appstate);
+    if (clayMemory)
     ClayDestructor(clayMemory);
 
     return;
