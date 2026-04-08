@@ -105,7 +105,7 @@ void VideoUI::OnRender() {
 void VideoUI::OnUpdate(double dt) {
     auto _ = dt;
 
-    progressPercentage = video.GetPlaybackPercentage();
+    progressPercentage = SDL_clamp(video.GetPlaybackPercentage(), 0.0, 1.0);
 }
 
 EventResult VideoUI::OnEvent(const Event& event) {
