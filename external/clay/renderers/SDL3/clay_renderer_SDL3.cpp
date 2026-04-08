@@ -151,7 +151,7 @@ void SDL_Clay_RenderClayCommands(Clay_SDL3RendererData *rendererData, Clay_Rende
     for (size_t i = 0; i < rcommands->length; i++) {
         Clay_RenderCommand *rcmd = Clay_RenderCommandArray_Get(rcommands, i);
         const Clay_BoundingBox bounding_box = rcmd->boundingBox;
-        const SDL_FRect rect = { (int)bounding_box.x, (int)bounding_box.y, (int)bounding_box.width, (int)bounding_box.height };
+        const SDL_FRect rect = { bounding_box.x, bounding_box.y, bounding_box.width, bounding_box.height };
 
         switch (rcmd->commandType) {
             case CLAY_RENDER_COMMAND_TYPE_RECTANGLE: {
@@ -188,27 +188,27 @@ void SDL_Clay_RenderClayCommands(Clay_SDL3RendererData *rendererData, Clay_Rende
                 if (config->width.left > 0) {
                     const float starting_y = rect.y + clampedRadii.topLeft;
                     const float length = rect.h - clampedRadii.topLeft - clampedRadii.bottomLeft;
-                    SDL_FRect line = { rect.x - 1, starting_y, config->width.left, length };
+                    SDL_FRect line = { rect.x - 1, starting_y, (float)config->width.left, length };
                     SDL_RenderFillRect(rendererData->renderer, &line);
                 }
                 if (config->width.right > 0) {
                     const float starting_x = rect.x + rect.w - (float)config->width.right + 1;
                     const float starting_y = rect.y + clampedRadii.topRight;
                     const float length = rect.h - clampedRadii.topRight - clampedRadii.bottomRight;
-                    SDL_FRect line = { starting_x, starting_y, config->width.right, length };
+                    SDL_FRect line = { starting_x, starting_y, (float)config->width.right, length };
                     SDL_RenderFillRect(rendererData->renderer, &line);
                 }
                 if (config->width.top > 0) {
                     const float starting_x = rect.x + clampedRadii.topLeft;
                     const float length = rect.w - clampedRadii.topLeft - clampedRadii.topRight;
-                    SDL_FRect line = { starting_x, rect.y - 1, length, config->width.top };
+                    SDL_FRect line = { starting_x, rect.y - 1, length, (float)config->width.top };
                     SDL_RenderFillRect(rendererData->renderer, &line);
                 }
                 if (config->width.bottom > 0) {
                     const float starting_x = rect.x + clampedRadii.bottomLeft;
                     const float starting_y = rect.y + rect.h - (float)config->width.bottom + 1;
                     const float length = rect.w - clampedRadii.bottomLeft - clampedRadii.bottomRight;
-                    SDL_FRect line = { starting_x, starting_y, length, config->width.bottom };
+                    SDL_FRect line = { starting_x, starting_y, length, (float)config->width.bottom };
                     SDL_SetRenderDrawColor(rendererData->renderer, config->color.r, config->color.g, config->color.b, config->color.a);
                     SDL_RenderFillRect(rendererData->renderer, &line);
                 }

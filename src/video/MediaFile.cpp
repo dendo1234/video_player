@@ -17,7 +17,8 @@ void MediaFile::OpenFile(const char* filename) {
     if(lastError < 0) {
         char buffer[AV_ERROR_MAX_STRING_SIZE];
         av_make_error_string(buffer, AV_ERROR_MAX_STRING_SIZE, lastError);
-        SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Error opening video file: %s", buffer);
+        SDL_LogCritical(SDL_LOG_CATEGORY_RENDER, "Error opening video file %s: %s", filename, buffer);
+        exit(EXIT_FAILURE);
     }
     context = unique_ptr<AVFormatContext, AVFormatContextDeleter>(avFormatContextRaw);
 
@@ -54,8 +55,8 @@ void MediaFile::Seek(double timestamp, double delta, int flags) {
     int64_t convertedTimestamp = static_cast<int64_t>(timestamp*AV_TIME_BASE);
     int64_t convertedDelta = static_cast<int64_t>(delta*AV_TIME_BASE);
 
-    int64_t minTs = delta > 0 ? convertedTimestamp - convertedDelta : INT_MIN;
-    int64_t maxTs = delta < 0 ? convertedTimestamp - convertedDelta : INT_MAX;
+    int64_t minTs = delta > 0 ? convertedTimestamp - convertedDelta : LLONG_MIN;
+    int64_t maxTs = delta < 0 ? convertedTimestamp - convertedDelta : LLONG_MAX;
 
     int lastError = avformat_seek_file(context.get(), -1, minTs, convertedTimestamp, maxTs, flags);
     if(lastError < 0) {

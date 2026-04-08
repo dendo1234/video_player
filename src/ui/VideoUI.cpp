@@ -4,13 +4,13 @@
 
 // Please note: -Wmissing-field-initializers is disabled for this file for making it less boilerplate to the the UI.
 
-const Clay_Color COLOR_BLACK = Clay_Color{0, 0, 0, 255};
-const Clay_Color COLOR_WHITE = Clay_Color{255, 255, 255, 255};
-const Clay_Color COLOR_LIGHT = Clay_Color{224, 215, 210, 255};
-const Clay_Color COLOR_RED = Clay_Color{168, 66, 28, 255};
-const Clay_Color COLOR_GREEN = Clay_Color{0, 255, 0, 255};
-const Clay_Color COLOR_ORANGE = Clay_Color{225, 138, 50, 255};
-const Clay_Color COLOR_TRANSPARENT = Clay_Color{0, 0, 0, 0};
+constexpr Clay_Color COLOR_BLACK = Clay_Color{0, 0, 0, 255};
+constexpr Clay_Color COLOR_WHITE = Clay_Color{255, 255, 255, 255};
+// constexpr Clay_Color COLOR_LIGHT = Clay_Color{224, 215, 210, 255};
+// constexpr Clay_Color COLOR_RED = Clay_Color{168, 66, 28, 255};
+constexpr Clay_Color COLOR_GREEN = Clay_Color{0, 255, 0, 255};
+// constexpr Clay_Color COLOR_ORANGE = Clay_Color{225, 138, 50, 255};
+// constexpr Clay_Color COLOR_TRANSPARENT = Clay_Color{0, 0, 0, 0};
 
 void ProgressBarClick([[maybe_unused]] Clay_ElementId elementId, Clay_PointerData pointerData, intptr_t userData) {
     VideoUI* videoUI = (VideoUI*)userData;

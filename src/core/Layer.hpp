@@ -13,6 +13,7 @@ public:
 
     Layer(/* args */) {};
     Layer(std::shared_ptr<Window> windowTarget) : windowTarget{windowTarget} {}
+    virtual ~Layer() = default;
 
     virtual void OnUpdate(double dt) { auto _ = dt; };
     virtual void OnRender() {};
