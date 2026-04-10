@@ -22,20 +22,17 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]] int argc, [[maybe_un
         return SDL_APP_FAILURE;
     }
 
+    TTF_Init();
+
     ApplicationSpecs specs = {
-        .windowSpecs = {
-            .title = "Video Player",
-            .w = 640,
-            .h = 360,
-        }
     };
     Application* app = new Application(specs);
     *appstate = app;
 
-    clayMemory = ClayInit();
+    clayMemory = ClayInit(app->GetFontManager().GetFonts());
 
     Video& video = app->CreateLayer<Video>(filename);
-    app->CreateLayer<VideoUI>(video);
+    app->CreateLayer<VideoUI>(video, app->GetFontManager().GetFonts());
 
 
     return SDL_APP_CONTINUE;
@@ -80,6 +77,8 @@ void SDL_AppQuit(void *appstate, [[maybe_unused]] SDL_AppResult result) {
     delete static_cast<Application*>(appstate);
     if (clayMemory)
     ClayDestructor(clayMemory);
+
+    TTF_Quit();
 
     return;
 };

@@ -8,12 +8,14 @@
 static Application* application_ptr = nullptr;
 
 Application::Application(const ApplicationSpecs& specs) {
+    (void)specs;
+
     SDL_SetHint(SDL_HINT_LOGGING, "info");
     // SDL_SetLogPriorities(SDL_LOG_PRIORITY_VERBOSE);
     SDL_Init(SDL_INIT_AUDIO);
 
     
-    windows.emplace_back(std::make_shared<Window>(specs.windowSpecs));
+    windows.emplace_back(std::make_shared<Window>());
 
     application_ptr = this;
 }

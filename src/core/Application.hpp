@@ -3,6 +3,7 @@
 #include <core/Layer.hpp>
 #include <core/Window.hpp>
 #include <core/Event.hpp>
+#include <core/FontManager.hpp>
 #include <concepts>
 #include <SDL3/SDL.h>
 
@@ -10,7 +11,6 @@ template<typename T>
 concept IsLayer = std::derived_from<T, Layer>;
 
 struct ApplicationSpecs {
-    WindowSpecs windowSpecs;
 };
 
 class Application {
@@ -19,6 +19,7 @@ private:
     double lastTime{GetTime()};
     bool running{false};
     std::vector<std::shared_ptr<Window>> windows;
+    FontManager fontManager;
 
 public:
     Application(const ApplicationSpecs& specs);
@@ -40,6 +41,10 @@ public:
     void Stop();
 
     Application& Get();
+
+    FontManager& GetFontManager() {
+        return fontManager;
+    };
 
 
     inline static double GetTime() {

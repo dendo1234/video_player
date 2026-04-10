@@ -27,7 +27,7 @@ static inline Clay_Dimensions SDL_MeasureText(Clay_StringSlice text, Clay_TextEl
     return Clay_Dimensions{ (float) width, (float) height };
 }
 
-char* ClayInit() {
+char* ClayInit(TTF_Font** fonts) {
     uint64_t totalMemorySize = Clay_MinMemorySize();
     std::allocator<char> allocator;
     auto ptr = allocator.allocate(totalMemorySize);
@@ -44,7 +44,8 @@ char* ClayInit() {
     };
     Clay_Initialize(arena, dim, clay_eh);
 
-    Clay_SetMeasureTextFunction(SDL_MeasureText, nullptr);
+
+    Clay_SetMeasureTextFunction(SDL_MeasureText, fonts);
 
     return (char*)ptr;
 }

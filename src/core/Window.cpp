@@ -2,14 +2,19 @@
 #include <cassert>
 
 
+constexpr struct {
+    std::string_view title{"masvp"};
+    int w{640};
+    int h{360};
+} defaultWindowSpecs;
 
-Window::Window(const WindowSpecs& specs) {
-    SDL_Window* window = SDL_CreateWindow(specs.title.c_str(), specs.w, specs.h, SDL_WINDOW_RESIZABLE);
+SDL_Window* Window::CreateWindow() {
+    SDL_Window* window = SDL_CreateWindow(defaultWindowSpecs.title.data(), defaultWindowSpecs.w, defaultWindowSpecs.h, SDL_WINDOW_RESIZABLE);
     SDL_SetWindowMinimumSize(window, 100, 30);
-    ptr = std::unique_ptr<SDL_Window, decltype(SDL_WindowDeleter)>(window);
+    return window;
+}
 
-    SDL_Renderer* rendererTemp = SDL_CreateRenderer(ptr.get(), nullptr);
-    renderer = std::unique_ptr<SDL_Renderer, decltype(SDL_RendererDeleter)>(rendererTemp);
+Window::Window() {
 
 }
 

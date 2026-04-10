@@ -3,6 +3,7 @@ set(PROJECT_SOURCES
     basic/GuiHandler.cpp
     core/Application.cpp
     core/Layer.cpp
+    core/FontManager.cpp
     core/Window.cpp
     stream/AudioStream.cpp
     stream/Stream.cpp

@@ -97,6 +97,12 @@ public:
     void GuiPass();
 
     double GetPlaybackPercentage() const;
+    double GetMasterClock() const {
+        return clock.GetTime();
+    };
+    double GetDuration() const {
+        return mediaFile.GetDuration();
+    }
     double ConvertPercentageToTimestamp(double percentage) const;
 
 };
