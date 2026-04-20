@@ -34,6 +34,11 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]] int argc, [[maybe_un
     Video& video = app->CreateLayer<Video>(filename);
     app->CreateLayer<VideoUI>(video, app->GetFontManager().GetFonts());
 
+    int w = video.GetVideoWidth();
+    int h = video.GetVideoHeight();
+    video.windowTarget->MaximizeWindow(w, h + video.bottomUIHeight);
+
+
 
     return SDL_APP_CONTINUE;
 };

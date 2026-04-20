@@ -10,6 +10,7 @@ private:
     bool mouse1Pressed{false};
     TTF_Font** fonts;
     std::string playbackProgressText;
+
 public:
     VideoUI(const Layer& layer, Video& video, TTF_Font** fonts);
 

@@ -275,8 +275,7 @@ SDL_FRect Video::CalculateDstBox() {
     int windowHeight;
     windowTarget->GetWindowSize(windowWidth, windowHeight);
 
-    // todo: get from somewhere else
-    int videoUIHeight = 18;
+    int videoUIHeight = bottomUIHeight;
 
     windowHeight -= videoUIHeight;
 

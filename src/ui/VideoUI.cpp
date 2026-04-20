@@ -108,7 +108,13 @@ VideoUI::VideoUI(const Layer& layer, Video& video, TTF_Font** fonts)
     : Layer{layer},
       video{video},
       fonts{fonts} {
-
+    Clay_RenderCommandArray _ = BuildLayout();
+    Clay_ElementData bottomUiData = Clay_GetElementData(CLAY_ID("Bottom UI"));
+    if (!bottomUiData.found) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Error computing video ui size");
+        return;
+    }
+    video.bottomUIHeight = bottomUiData.boundingBox.height;
 }
 
 void VideoUI::OnRender() {

@@ -37,6 +37,13 @@ public:
     void SetRenderTargetSelf();
     void GetWindowSize(int& w, int& h);
     void GetMousePosition(float& x, float& y);
+
+    void SetTitle(const char* title) {
+        SDL_SetWindowTitle(ptr.get(), title);
+    }
+
+    void MaximizeWindow(int windowWidth, int windowHeight);
+
     std::unique_ptr<SDL_Texture, SDL_TextureDeleter> CreateTexture(SDL_PixelFormat pixelFormat, SDL_TextureAccess textureAccess, int w, int h);
     SDL_Renderer* GetRenderer();
     TTF_TextEngine* GetTextEngine() {

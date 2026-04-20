@@ -39,6 +39,45 @@ SDL_Renderer* Window::GetRenderer() {
     return renderer.get();
 }
 
+void Window::MaximizeWindow(int windowWidth, int windowHeight) {
+    // TODO: this calculation could be a bit better
+    int top, left, right, bottom;
+    SDL_GetWindowBordersSize(ptr.get(), &top, &left, &bottom, &right);
+
+    windowWidth += left + right;
+    windowHeight += top;
+
+    SDL_DisplayID id = SDL_GetDisplayForWindow(ptr.get());
+    SDL_Rect rect;
+    SDL_GetDisplayUsableBounds(id, &rect);
+
+    float windowAspect = static_cast<float>(windowWidth)/windowHeight;
+    float displayAspect = static_cast<float>(rect.w)/rect.h;
+
+    SDL_Rect pos;
+    //case 1: window aspect is bigger:
+    if (displayAspect > windowAspect) {
+        // blackbars on the left/right
+        int w = windowAspect*(rect.h-top-bottom);
+        pos = SDL_Rect{
+            .x = (rect.w-w)/2,
+            .y = top,
+            .w = w,
+            .h = rect.h-top-bottom
+        };
+    } else {
+        int h = 1/windowAspect*rect.w;
+        pos = SDL_Rect{
+            .x = left,
+            .y = (rect.h-h)/2,
+            .w = rect.w-left-right,
+            .h = h
+        };
+    }
+    SDL_SetWindowSize(ptr.get(), pos.w, pos.h);
+    SDL_SetWindowPosition(ptr.get(), pos.x, pos.y);
+}
+
 void Window::SwapBuffers() {
     SDL_RenderPresent(renderer.get());
 }

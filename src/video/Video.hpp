@@ -39,6 +39,7 @@ class Player; // "basic/Player.hpp"
 class Video : public Layer {
 public:
     bool m_videoDone{false};
+    int bottomUIHeight{0};
 private:
     MediaFile mediaFile;
     VideoStream videoStream;
