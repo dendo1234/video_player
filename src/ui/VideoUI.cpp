@@ -146,6 +146,7 @@ void VideoUI::OnRender() {
     SDL_SetRenderTarget(windowTarget->GetRenderer(), nullptr);
     SDL_SetRenderLogicalPresentation(windowTarget->GetRenderer(), 0, 0, SDL_LOGICAL_PRESENTATION_DISABLED);
     SDL_Clay_RenderClayCommands(&data, &renderCommands);
+    // Should we re-enable logical presentation? 
 
 }
 

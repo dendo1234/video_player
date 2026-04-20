@@ -41,6 +41,7 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]] int argc, [[maybe_un
 SDL_AppResult SDL_AppIterate(void *appstate) {
     Application* app = static_cast<Application*>(appstate);
 
+    // TODO: get framerate from video
     static const uint64_t FRAME_TIME = 16666667;
     uint64_t frameStart = SDL_GetTicksNS();
 

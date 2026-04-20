@@ -180,10 +180,6 @@ Video::Video(const Layer& layer, const char* filename)
     audioStreams{InitializeAudioStreams()} {
     
     texture = windowTarget->CreateTexture(SDL_PIXELFORMAT_YV12, SDL_TEXTUREACCESS_STREAMING, videoStream.GetWidth(), videoStream.GetHeight());
-    SDL_Texture* previousTarget = SDL_GetRenderTarget(windowTarget->GetRenderer());
-    SDL_SetRenderTarget(windowTarget->GetRenderer(), texture.get());
-    SDL_SetRenderLogicalPresentation(windowTarget->GetRenderer(), videoStream.GetWidth(), videoStream.GetHeight(), SDL_RendererLogicalPresentation::SDL_LOGICAL_PRESENTATION_LETTERBOX);
-    SDL_SetRenderTarget(windowTarget->GetRenderer(), previousTarget);
 
     InitializeThreads();
 
