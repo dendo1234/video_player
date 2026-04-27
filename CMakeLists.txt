@@ -9,6 +9,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 find_package(SDL3 REQUIRED CONFIG REQUIRED COMPONENTS SDL3)
 find_package(SDL3_ttf CONFIG REQUIRED)
 
+add_subdirectory(${CMAKE_SOURCE_DIR}/external/DejaVuSans)
 add_subdirectory(${CMAKE_SOURCE_DIR}/external/clay)
 
 find_path(AVCODEC_INCLUDE_DIR NAMES libavcodec/avcodec.h REQUIRED)

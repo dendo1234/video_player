@@ -1,12 +1,13 @@
 #include <core/FontManager.hpp>
+#include <DejaVuSans.h>
 
 
 FontManager::FontManager() {
-    for (size_t i = 0; i < fontPaths.size(); i++) {
-        fonts[i] = TTF_OpenFont(fontPaths[i], 1);
-        if (fonts[i] == nullptr) {
-            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to open font file %s: %s", fontPaths[i], SDL_GetError());
-        }
+    SDL_IOStream* buf = SDL_IOFromConstMem(__DejaVuSans_ttf, __DejaVuSans_ttf_len);
+    TTF_Font* font = TTF_OpenFontIO(buf, true, 1);
+    fonts[0] = font;
+    if (fonts[0] == nullptr) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to open font file %s: %s", fontPaths[0], SDL_GetError());
     }
 }
 
