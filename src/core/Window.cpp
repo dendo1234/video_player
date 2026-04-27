@@ -40,7 +40,6 @@ SDL_Renderer* Window::GetRenderer() {
 }
 
 void Window::MaximizeWindow(int windowWidth, int windowHeight) {
-    // TODO: this calculation could be a bit better
     int top, left, right, bottom;
     SDL_GetWindowBordersSize(ptr.get(), &top, &left, &bottom, &right);
 
@@ -51,11 +50,20 @@ void Window::MaximizeWindow(int windowWidth, int windowHeight) {
     SDL_Rect rect;
     SDL_GetDisplayUsableBounds(id, &rect);
 
+    // don't automaticaly scale video size
+    if (rect.w > windowWidth && rect.h > windowHeight) {
+        windowWidth -= left + right;
+        windowHeight -= top;
+        SDL_SetWindowSize(ptr.get(), windowWidth, windowHeight);
+        SDL_SetWindowPosition(ptr.get(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
+        return;
+    }
+
     float windowAspect = static_cast<float>(windowWidth)/windowHeight;
     float displayAspect = static_cast<float>(rect.w)/rect.h;
 
     SDL_Rect pos;
-    //case 1: window aspect is bigger:
+    //case 1: display aspect is bigger:
     if (displayAspect > windowAspect) {
         // blackbars on the left/right
         int w = windowAspect*(rect.h-top-bottom);
@@ -75,7 +83,7 @@ void Window::MaximizeWindow(int windowWidth, int windowHeight) {
         };
     }
     SDL_SetWindowSize(ptr.get(), pos.w, pos.h);
-    SDL_SetWindowPosition(ptr.get(), pos.x, pos.y);
+    SDL_SetWindowPosition(ptr.get(), pos.x, pos.y); // SDL_WINDOWPOS_CENTERED doesn't consider the window's borders
 }
 
 void Window::SwapBuffers() {
